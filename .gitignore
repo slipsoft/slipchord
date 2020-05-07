@@ -1,0 +1,7 @@
+# Compiled files
+*.o
+/slipchord
+
+# IDE files
+.vscode
+
