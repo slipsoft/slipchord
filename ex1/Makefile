@@ -1,4 +1,4 @@
-EXEC        := ex1
+EXEC        := main
 DEBUG       := yes
 CC          := mpicc
 CFLAGS      := -W -Wall

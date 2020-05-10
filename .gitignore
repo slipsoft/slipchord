@@ -1,6 +1,9 @@
 # Compiled files
 *.o
 
+# Executables
+main
+
 # IDE files
 .vscode
 
