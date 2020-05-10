@@ -6,7 +6,7 @@
 
 Le processus simulateur s'occupe de créer la DHT (distributed hash-table) et les finger tables des processus, puis envoie les infos utiles aux pairs (processus créés). Il choisit aussi le nombre de clefs du système. (c'est une puissance de deux)
 
-Le nombre de pairs est fonction du nombre de processus créés via MPI, pour changer leur nombre il suffit de changer le champ `NP` de notre fichier `ex1/Makefile` (par défait, `NP ?= 5`).
+Le nombre de pairs est fonction du nombre de processus créés via MPI, pour changer leur nombre il suffit de changer la valeur de `NP` exemple `make run NP=42`.
 
 ### Question 1.2. Recherche de clef
 
