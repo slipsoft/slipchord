@@ -1,4 +1,4 @@
-EXEC        := slipchord
+EXEC        := ex1
 DEBUG       := yes
 CC          := mpicc
 CFLAGS      := -W -Wall
@@ -14,14 +14,14 @@ endif
 .PHONY: all
 all: $(EXEC)
 
-slipchord: slipchord.o
+$(EXEC): $(EXEC).o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: run
-run:
+run: $(EXEC)
 	$(MPIRUN) $(MPIFLAGS) $(EXEC)
 
 .PHONY: clean
