@@ -3,7 +3,7 @@ DEBUG       := yes
 CC          := mpicc
 CFLAGS      := -W -Wall
 LDFLAGS     :=
-NP          ?= 5
+NP          ?= 10
 MPIRUN      := mpirun
 MPIFLAGS    += --oversubscribe -np $(NP)
 
