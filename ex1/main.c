@@ -4,6 +4,14 @@
 #include <stdlib.h> // pour rand et srand
 #include <time.h>   // pour time
 
+#define TAG_INIT 1 // envoi initial des infos aux pairs
+#define TAG_INITACK 2 // acquittement des infos par les pairs au processus init
+#define TAG_RECHERCHE_INIT 3 // recherche d'une clef : demande depuis le processus init
+#define TAG_RECHERCHE_PAIR 4 // recherche d'une clef : demande depuis un pair
+#define TAG_TERM 5 // se terminer
+
+#define RANG_SIMULATEUR 0
+
 
 // Elevation à la puissance d'entiers naturels
 /*int natural_power(int x, int y)
@@ -33,7 +41,8 @@ void initialisation(int c_exposant, int ) {
 */
 void init_pairs_TD(int **p_pairs_valeurs,
                    int *p_nombre_pairs, int *p_nombre_clefs,
-                   int *p_nombre_clefs_exposant) {
+                   int *p_nombre_clefs_exposant)
+{
 	
 	int nombre_pairs = 10;
 	int nombre_clefs_exposant = 6;
@@ -58,11 +67,13 @@ void init_pairs_TD(int **p_pairs_valeurs,
 	*p_nombre_clefs_exposant = nombre_clefs_exposant;
 }
 
+
 /* Initialisation des pairs d'une manière aléatoire.
 */
 void init_pairs_aleatoire(int **p_pairs_valeurs,
                          int *p_nombre_pairs, int *p_nombre_clefs,
-                         int *p_nombre_clefs_exposant) {
+                         int *p_nombre_clefs_exposant)
+{
 	
 	int nombre_pairs;
 	int nombre_clefs;
@@ -120,6 +131,14 @@ void init_pairs_aleatoire(int **p_pairs_valeurs,
 	*p_nombre_clefs_exposant = nombre_clefs_exposant;
 }
 
+// TODO si j'ai le temps : vérifier les finger tables avec le TD, via une fonction.
+/*void verification_finger_table_td(int **f_tables_pairs) {
+	
+}*/
+
+struct ftable_element {
+	int valeur, rang; // la valeur et le rang du processus
+};
 
 // Initialisation de la DHT, envoi aux autres processus de leurs informations.
 void simulateur(void)
@@ -157,7 +176,7 @@ void simulateur(void)
 	// *** Calcul des finger table de chaque processus ***
 	
 	// Finger tables de tous les processus
-	int **f_tables_pairs = malloc(sizeof(int *) * nombre_pairs);
+	struct ftable_element **f_tables_pairs = malloc(sizeof(struct ftable_element *) * nombre_pairs);
 	
 	// Je répète l'opération pour chaque pair
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
@@ -166,7 +185,7 @@ void simulateur(void)
 		int v_pair = pairs_valeurs[i_pair];
 		
 		// Finger table de ce processus (d'index i_pair)
-		int *f_table = malloc(sizeof(int) * nombre_clefs_exposant);
+		struct ftable_element *f_table = malloc(sizeof(struct ftable_element) * nombre_clefs_exposant);
 		f_tables_pairs[i_pair] = f_table;
 		
 		
@@ -179,18 +198,18 @@ void simulateur(void)
 			// Je trouve le pair en charge de cette clef
 			int i_pair_associe;
 			int distance_min = -1;
-			// Le pair associé est le plus petit pair plus grand ou
-			// égal à la clef. I.e. je prends la plus petite
-			// distance entre v_clef et un pair, dans le sens
-			// contraire au sens trigonométrique (distance donc
-			// comprise entre 0 et nombre_clefs-1).
+			
+			/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
+			   i.e. je prends la plus petite distance entre v_clef et un pair,
+			   dans le sens contraire au sens trigonométrique (distance donc
+			   comprise entre 0 et nombre_clefs-1). */
 			for (int p_ind = 0; p_ind < nombre_pairs; ++p_ind) {
 				int p_val = pairs_valeurs[p_ind];
-				// Si la valeur du pair est plus petite que la
-				// clef, je rajoute un tour.
+				
+				// Si la valeur du pair est plus petite que la clef, je rajoute un tour.
 				if (p_val < v_clef) p_val += nombre_clefs;
-				// La valeur du pair est donc strictement
-				// supérieure à la valeur de la clef.
+				
+				// La valeur du pair est donc supérieure ou égale à la valeur de la clef.
 				int dist = p_val - v_clef;
 				if ((distance_min == -1)
 				|| ((distance_min != -1) && (dist < distance_min))) {
@@ -202,34 +221,63 @@ void simulateur(void)
 			// valeur du pair en charge de cette clef
 			int v_pair_associe = pairs_valeurs[i_pair_associe];
 			
-			f_table[i_clef] = v_pair_associe;
+			f_table[i_clef].valeur = v_pair_associe;
+			f_table[i_clef].rang = i_pair_associe + 1; // le processus 0 est le simulateur
 		}
 	}
 	
 	// Affichage des finger table :
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-		int *f_table = f_tables_pairs[i_pair];
+		struct ftable_element *f_table = f_tables_pairs[i_pair];
 		int v_pair = pairs_valeurs[i_pair];
 		printf("--- Pair index %d  valeur %d ---\n", i_pair, v_pair);
 		for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
 			int v_clef = (v_pair + (1 << i_clef)) % nombre_clefs;
-			int v_pair_responsable = f_table[i_clef];
-			printf("clef %d  valeur %d  pair responsable %d\n",
-			       i_clef, v_clef, v_pair_responsable);
+			int v_pair_responsable = f_table[i_clef].valeur;
+			int r_pair_responsable = f_table[i_clef].rang;
+			printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
+			i_clef, v_clef, v_pair_responsable, r_pair_responsable);
 			
 		}
 	}
 	
+	// Envoi des valeurs aux autres processus
 	
+	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
+		struct ftable_element *f_table = f_tables_pairs[i_pair];
+		int v_pair = pairs_valeurs[i_pair];
+		int rang_pair = i_pair + 1;
+		// Envoi de l'exposant déterminant le nombre de clefs de la DHT
+		MPI_Send(&nombre_clefs_exposant, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
+		// Envoi de la valeur associée
+		MPI_Send(&v_pair, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
+		//MPI_Send(&i_pair, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
+		// Envoi de la finger table
+		for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
+			MPI_Send(&f_table[i_clef].valeur, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
+			MPI_Send(&f_table[i_clef].rang, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
+		}
+	}
 	
+	// Attente de l'ack de tous les pairs
+	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
+		int ack;
+		int rang_pair = i_pair + 1;
+		MPI_Recv(&ack, 1, MPI_INT, rang_pair, TAG_INITACK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
+	
+	printf("SIMULATEUR OK TERMINE\n");
+	// Recherche d'une clef par un pair pris au hasard
 	
 	// reste :
-	// envoyer les valeurs aux processus convcernés
+	// envoyer les valeurs aux processus concernés
+	
+	// Puis Q2, Q3
 	
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-		int *f_table = f_tables_pairs[i_pair];
+		struct ftable_element *f_table = f_tables_pairs[i_pair];
 		free(f_table);
 	}
 	
@@ -238,10 +286,114 @@ void simulateur(void)
 }
 
 
+void pair_classique(void)
+{
+	int my_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	
+	// Réception de ses informations
+	int valeur_associee;
+	int nombre_clefs_exposant, nombre_clefs;
+	MPI_Status status;
+	
+	MPI_Recv(&nombre_clefs_exposant, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
+	nombre_clefs = 1 << nombre_clefs_exposant;
+	MPI_Recv(&valeur_associee, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
+	
+	struct ftable_element *finger_table = malloc(sizeof(struct ftable_element) * nombre_clefs_exposant);
+	
+	//printf("--- Pair index %d  valeur %d --- rcv\n", my_rank-1, valeur_associee);
+	// Réception de la finger table
+	for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
+		// Valeur de la clef à l'index i_clef
+		int v_clef = (valeur_associee + (1 << i_clef)) % nombre_clefs;
+		struct ftable_element *elem = &finger_table[i_clef];
+		MPI_Recv(&(elem->valeur), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
+		MPI_Recv(&(elem->rang), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
+		
+		//printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
+		i_clef, v_clef, elem->valeur, elem->rang);
+		
+		//int v_pair_responsable = f_table[i_clef];
+		//MPI_Send(&v_pair_responsable, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
+	}
+	
+	int ack = 0;
+	MPI_Send(&ack, 1, MPI_INT, RANG_SIMULATEUR, TAG_INITACK, MPI_COMM_WORLD);
+	
+	int continuer = 1;
+	
+	while (continuer) {
+		int valeur_clef;
+		// Attente de la réception d'un message
+		MPI_Recv(&valeur_clef, 1, MPI_INT, MPI_ANY_SOURCE, TAG_INIT, MPI_COMM_WORLD, &status);
+		// Le système se termine
+		if (status.MPI_TAG == TAG_TERM) {
+			continuer = 0;
+			continue;
+		}
+		// Le processus init me demande de rechercher une clef
+		if (status.MPI_TAG == TAG_RECHERCHE_INIT) {
+			// Je recherche le processus à qui envoyer ma demande
+			
+			
+			
+		}
+		
+	}
+	
+	
+	
+	
+	
+	free(finger_table);
+}
+
+// retourne le résultat de la soustraction entre a et b (cyclique)
+int b_moins_a(int a, int b, int k)
+{
+	// 
+	if ( (b - a) > 0 ) {
+		if (b - a < k / 2) return b - a; // b plus grand au sens cyclique
+		return 
+	} TODO : à finir
+	
+	// a est avant b si :
+	// la distance entre b et a
+}
+
+// Trouver l'index du pair à qui envoyer un message récursif (dans ma finger table)
+// -1 signifie que le pair en charge de la clef est mon successeur.
+int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+{
+	// Je recherche le plus grand pair dont la clef est strictement plus petite que clef.
+	int pair_index = -1;
+	
+	// les pairs sont ordonnés par ordre croissant (en fonction des 2 puissance i)
+	for (int i = 0; i < len_table; ++i) {
+		struct ftable_element *pair = finger_table[i];
+		int v_pair = pair->valeur;
+		
+		// Ordre cyclique :
+		// Si la valeur du pair est inférieure à ma valeur, rajouter un tour
+		if ()
+		
+		if (clef > pair->valeur) {
+			// ainsi, je prends le plus grand pair strictement inférieur à la clef
+			pair_index = i; 
+		}
+	}
+	
+	return pair_index;
+}
 
 
-
-
+/*
+#define TAG_INIT 1
+#define TAG_INITACK 2
+#define TAG_RECHERCHE 3
+#define TAG_TERM 4
+*/
 
 int main(int argc, char *argv[])
 {
@@ -252,11 +404,13 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
-	
+
 	mon_id = my_rank;
 
 	if (mon_id == 0) {
 		simulateur();
+	} else {
+		pair_classique();
 	}
 
 	//printf("Processus %d sur %d : Hello\n", my_rank, nb_proc);
