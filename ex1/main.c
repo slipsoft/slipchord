@@ -12,6 +12,12 @@
 
 #define RANG_SIMULATEUR 0
 
+// Afficher un message d'erreur. Ne fonctionne qu'après MPI_Init()
+#define error(str) print_log("ERREUR", __func__, __LINE__, str)
+
+// Afficher un message. Ne fonctionne qu'après MPI_Init()
+#define info(str, ...) print_log(NULL, __func__, __LINE__, str)
+
 
 // Elevation à la puissance d'entiers naturels
 /*int natural_power(int x, int y)
@@ -421,4 +427,16 @@ int main(int argc, char *argv[])
 
 	MPI_Finalize();
 	return 0;
+}
+
+
+// Afficher un message. Ne fonctionne qu'après MPI_Init()
+void print_log(const char *msg_type, const char *fct_name, const int line, const char *str) {
+	int rang;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rang);
+	if (msg_type != NULL) {
+		printf("(de %d) %s : %s (%s l.%d)\n", rang, msg_type, str, fct_name, line);
+	} else {
+		printf("(de %d) %s (%s l.%d)\n", rang, str, fct_name, line);
+	}
 }
