@@ -37,6 +37,7 @@ struct ftable_element {
 void simulateur(void);
 void pair_classique(void);
 int b_moins_a(int a, int b, int k);
+int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
 int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
 void print_log(const char *msg_type, const char *fct_name, const int line, const char *str);
 
@@ -256,12 +257,15 @@ void simulateur(void)
 		}*/
 		
 		// test de qui est responsable de quelle valeur :
-		int vtest = 4;
-		int p_in = trouver_index_responsable(f_table, nombre_clefs_exposant, vtest, v_pair);
+		int vtest = 7;
+		int v_in;
+		int p_in = trouver_index_responsable_nico(f_table, nombre_clefs_exposant, vtest, v_pair);
 		if (p_in != -1) {
-			p_in = f_table[p_in].valeur;
+			v_in = f_table[p_in].valeur;
+		} else {
+			v_in = v_pair;
 		}
-		printf("Pair %d  (%d -> %d) \n", v_pair, vtest, p_in);
+		printf("Pair %d  (%d -> (%d)%d) \n", v_pair, vtest, p_in, v_in);
 		//printf("Responsable de %d   :   %d\n", vtest, p_in);
 	}
 	
@@ -413,6 +417,25 @@ int b_moins_a(int a, int b, int k)
 int appartient_ouvert_ferme(int a, int b, int k, int N) {
 	if (a < b) return ((k > a) && (k <= b));
 	return (((k >= 0) && (k < b)) || ((k >= a) && (k < N)));
+}
+
+int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+{
+	int i, prev, sup2prev, inf2curr;
+	int curr = ma_valeur;
+	int nb_clef = (1 << len_ftable);
+
+	for (i = 0; i < len_ftable; i++) {
+		prev = curr;
+		curr = finger_table[i].valeur;
+		printf("i: %d, clef: %d, prev: %2d, curr: %2d\n", i, clef, prev, curr);
+		sup2prev = a_inf_b(prev - 1, clef, nb_clef);
+		inf2curr = a_inf_b(clef, curr + 1, nb_clef);
+		if (sup2prev && inf2curr) {
+			return i - 1;
+		}
+	}
+	return i - 1;
 }
 
 // Trouver l'index du pair à qui envoyer un message récursif (dans ma finger table)
