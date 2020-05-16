@@ -143,7 +143,9 @@ void init_pairs_aleatoire(int **p_pairs_valeurs,
 }*/
 
 struct ftable_element {
-	int valeur, rang; // la valeur et le rang du processus
+	int valeur, rang; // la valeur et le rang du processus.
+	// La valeur pourrait être relalculée,
+	// mais je trouve ça bien pratique de l'avoir directement.
 };
 
 // Initialisation de la DHT, envoi aux autres processus de leurs informations.
@@ -242,10 +244,22 @@ void simulateur(void)
 			int v_clef = (v_pair + (1 << i_clef)) % nombre_clefs;
 			int v_pair_responsable = f_table[i_clef].valeur;
 			int r_pair_responsable = f_table[i_clef].rang;
-			printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
-			i_clef, v_clef, v_pair_responsable, r_pair_responsable);
-			
+			//printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
+			//i_clef, v_clef, v_pair_responsable, r_pair_responsable);
 		}
+		
+		
+		// test de qui est responsable de quelle valeur :
+		int vtest = 39;
+		int p_in = trouver_index_responsable(f_table, nombre_clefs_exposant, vtest, v_pair);
+		if (p_in != -1) {
+			p_in = f_table[p_in].valeur;
+		}
+		
+		printf("Responsable de %d   :   %d\n", vtest, p_in);
+		
+		
+		
 	}
 	
 	// Envoi des valeurs aux autres processus
@@ -274,10 +288,14 @@ void simulateur(void)
 	}
 	
 	printf("SIMULATEUR OK TERMINE\n");
+	
 	// Recherche d'une clef par un pair pris au hasard
 	
-	// reste :
-	// envoyer les valeurs aux processus concernés
+	int rang_pair = 1 + (rand() % (nombre_pairs - 1));
+	int valeur_recherchee = rand() % nombre_clefs;
+	
+	MPI_Send(&valeur_recherchee, 1, MPI_INT, rang_pair, TAG_RECHERCHE_INIT, MPI_COMM_WORLD);
+	
 	
 	// Puis Q2, Q3
 	
@@ -326,28 +344,32 @@ void pair_classique(void)
 	
 	int ack = 0;
 	MPI_Send(&ack, 1, MPI_INT, RANG_SIMULATEUR, TAG_INITACK, MPI_COMM_WORLD);
-	/*
-	int continuer = 1;
 	
+	int continuer = 1;
+	/*
 	while (continuer) {
 		int valeur_clef;
 		// Attente de la réception d'un message
-		MPI_Recv(&valeur_clef, 1, MPI_INT, MPI_ANY_SOURCE, TAG_INIT, MPI_COMM_WORLD, &status);
+		MPI_Recv(&valeur_clef, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		
 		// Le système se termine
 		if (status.MPI_TAG == TAG_TERM) {
 			continuer = 0;
 			continue;
 		}
+		
 		// Le processus init me demande de rechercher une clef
 		if (status.MPI_TAG == TAG_RECHERCHE_INIT) {
 			// Je recherche le processus à qui envoyer ma demande
+			
+			printf("Init me demande de rechercher la clef %d\n", valeur_clef);
 			
 			
 			
 		}
 		
-	}*/
-	
+	}
+	*/
 	
 	
 	
@@ -383,6 +405,7 @@ int trouver_index_responsable(struct ftable_element *finger_table, int len_ftabl
 	for (int i = 0; i < len_ftable; ++i) {
 		struct ftable_element *pair = &finger_table[i];
 		int v_pair = pair->valeur;
+		// v_pair aussi = ma_valeur + (1 << i)
 		
 		// Ordre cyclique :
 		// Si la valeur du pair est inférieure à ma valeur, rajouter un tour
