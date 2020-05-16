@@ -7,3 +7,5 @@ main
 # IDE files
 .vscode
 
+test_ordre_cyclique
+test

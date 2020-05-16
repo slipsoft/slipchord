@@ -1,4 +1,4 @@
-EXEC        := test
+EXEC        := test_ordre_cyclique
 DEBUG       := yes
 CC          := gcc
 CFLAGS      := -W -Wall

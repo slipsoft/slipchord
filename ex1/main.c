@@ -312,7 +312,7 @@ void pair_classique(void)
 		MPI_Recv(&(elem->rang), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 		
 		//printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
-		i_clef, v_clef, elem->valeur, elem->rang);
+		//i_clef, v_clef, elem->valeur, elem->rang);
 		
 		//int v_pair_responsable = f_table[i_clef];
 		//MPI_Send(&v_pair_responsable, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
@@ -320,7 +320,7 @@ void pair_classique(void)
 	
 	int ack = 0;
 	MPI_Send(&ack, 1, MPI_INT, RANG_SIMULATEUR, TAG_INITACK, MPI_COMM_WORLD);
-	
+	/*
 	int continuer = 1;
 	
 	while (continuer) {
@@ -340,7 +340,7 @@ void pair_classique(void)
 			
 		}
 		
-	}
+	}*/
 	
 	
 	
@@ -352,14 +352,18 @@ void pair_classique(void)
 // retourne le résultat de la soustraction entre a et b (cyclique)
 int b_moins_a(int a, int b, int k)
 {
-	// 
+	// soustraction sur les entiers positive
 	if ( (b - a) > 0 ) {
-		if (b - a < k / 2) return b - a; // b plus grand au sens cyclique
-		return 
-	} TODO : à finir
-	
-	// a est avant b si :
-	// la distance entre b et a
+		// résultat >= 0 : b plus grand au sens cyclique
+		if ( (b - a) < k / 2 ) return b - a;
+		// résultat <= 0 : a plus grand au sens cyclique
+		return (b - a) - k; // (distance bien indéfieure à k/2 car ((b-a) >= k/2))
+	} else /* (b - a) <= 0 */ {
+		// résultat <= 0 : a plus grand au sens cyclique
+		if ( (a - b) < k / 2 ) return b - a;
+		// résultat >= 0 : b plus grand au sens cyclique
+		return k + (b - a);
+	}
 }
 
 // Trouver l'index du pair à qui envoyer un message récursif (dans ma finger table)
@@ -370,13 +374,13 @@ int trouver_index_responsable(struct ftable_element *finger_table, int len_ftabl
 	int pair_index = -1;
 	
 	// les pairs sont ordonnés par ordre croissant (en fonction des 2 puissance i)
-	for (int i = 0; i < len_table; ++i) {
-		struct ftable_element *pair = finger_table[i];
+	for (int i = 0; i < len_ftable; ++i) {
+		struct ftable_element *pair = &finger_table[i];
 		int v_pair = pair->valeur;
 		
 		// Ordre cyclique :
 		// Si la valeur du pair est inférieure à ma valeur, rajouter un tour
-		if ()
+		//if ()
 		
 		if (clef > pair->valeur) {
 			// ainsi, je prends le plus grand pair strictement inférieur à la clef
