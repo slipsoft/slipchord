@@ -29,7 +29,19 @@
 	return result;
 }*/
 
-int compare_int(const void* a, const void* b)
+
+struct ftable_element {
+	int valeur, rang; // la valeur et le rang du processus.
+};
+
+void simulateur(void);
+void pair_classique(void);
+int b_moins_a(int a, int b, int k);
+int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
+void print_log(const char *msg_type, const char *fct_name, const int line, const char *str);
+
+
+int qsort_compare_int(const void* a, const void* b)
 {
 	return *((int*) a) - *((int*) b);
 }
@@ -123,7 +135,7 @@ void init_pairs_aleatoire(int **p_pairs_valeurs,
 	// même s'il y a un nombre fini de cases, car il y a beaucoup plus
 	// de cases possibles que de pairs.
 	
-	qsort(pairs_valeurs, nombre_pairs, sizeof(int), compare_int);
+	qsort(pairs_valeurs, nombre_pairs, sizeof(int), qsort_compare_int);
 	
 	for (int pair_index = 0; pair_index < nombre_pairs; ++pair_index) {
 		printf("pair %d  valeur %d \n",
@@ -142,11 +154,6 @@ void init_pairs_aleatoire(int **p_pairs_valeurs,
 	
 }*/
 
-struct ftable_element {
-	int valeur, rang; // la valeur et le rang du processus.
-	// La valeur pourrait être relalculée,
-	// mais je trouve ça bien pratique de l'avoir directement.
-};
 
 // Initialisation de la DHT, envoi aux autres processus de leurs informations.
 void simulateur(void)
@@ -239,27 +246,23 @@ void simulateur(void)
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		struct ftable_element *f_table = f_tables_pairs[i_pair];
 		int v_pair = pairs_valeurs[i_pair];
-		printf("--- Pair index %d  valeur %d ---\n", i_pair, v_pair);
-		for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
+		//printf("--- Pair index %d  valeur %d ---\n", i_pair, v_pair);
+		/*for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
 			int v_clef = (v_pair + (1 << i_clef)) % nombre_clefs;
 			int v_pair_responsable = f_table[i_clef].valeur;
 			int r_pair_responsable = f_table[i_clef].rang;
-			//printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
-			//i_clef, v_clef, v_pair_responsable, r_pair_responsable);
-		}
-		
+			// printf("clef %d  valeur %d  pair responsable %d  (rang %d)\n",
+			// i_clef, v_clef, v_pair_responsable, r_pair_responsable);
+		}*/
 		
 		// test de qui est responsable de quelle valeur :
-		int vtest = 39;
+		int vtest = 4;
 		int p_in = trouver_index_responsable(f_table, nombre_clefs_exposant, vtest, v_pair);
 		if (p_in != -1) {
 			p_in = f_table[p_in].valeur;
 		}
-		
-		printf("Responsable de %d   :   %d\n", vtest, p_in);
-		
-		
-		
+		printf("Pair %d  (%d -> %d) \n", v_pair, vtest, p_in);
+		//printf("Responsable de %d   :   %d\n", vtest, p_in);
 	}
 	
 	// Envoi des valeurs aux autres processus
@@ -377,6 +380,18 @@ void pair_classique(void)
 	free(finger_table);
 }
 
+int a_moins_b(int a, int b, int k) {
+	return - b_moins_a(a, b, k);
+}
+
+int a_inf_b(int a, int b, int k) {
+	int res = b_moins_a(a, b, k);
+	
+	if (res > 0) return 1;
+	return 0;
+}
+
+
 // retourne le résultat de la soustraction entre a et b (cyclique)
 int b_moins_a(int a, int b, int k)
 {
@@ -394,6 +409,12 @@ int b_moins_a(int a, int b, int k)
 	}
 }
 
+// Regarde si k appartient à ]a, b]
+int appartient_ouvert_ferme(int a, int b, int k, int N) {
+	if (a < b) return ((k > a) && (k <= b));
+	return (((k >= 0) && (k < b)) || ((k >= a) && (k < N)));
+}
+
 // Trouver l'index du pair à qui envoyer un message récursif (dans ma finger table)
 // -1 signifie que le pair en charge de la clef est mon successeur.
 int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
@@ -405,16 +426,42 @@ int trouver_index_responsable(struct ftable_element *finger_table, int len_ftabl
 	for (int i = 0; i < len_ftable; ++i) {
 		struct ftable_element *pair = &finger_table[i];
 		int v_pair = pair->valeur;
-		// v_pair aussi = ma_valeur + (1 << i)
+		/*int v_ppair = ma_valeur + (1 << i);
 		
-		// Ordre cyclique :
-		// Si la valeur du pair est inférieure à ma valeur, rajouter un tour
-		//if ()
+		if (v_pair == v_ppair) {
+			info("Valeurs identiques\n");
+		} else {
+			printf("Valeurs différentes : %d et %d\n", v_pair, v_ppair);
+		}*/
 		
-		if (clef > pair->valeur) {
+		//printf("Nb clefs : %d \n", 1 << len_ftable);
+		
+		// Je dois avoir : clef > v_pair  et  clef <= 
+		// appartient_ouvert_ferme
+		int nb_clef = (1 << len_ftable);
+		/*if (nb_clef != 64) error("Pas bonne clef");
+		int c1 = a_moins_b(clef, pair->valeur, nb_clef);
+		int c2 = a_moins_b(clef, ma_valeur, nb_clef);
+		*/
+		//int dist_k_j = 
+		//int op = pair->valeur - clef;
+		/*if ((i == 0) && (op < 0)) {
+			
+		}*/
+		
+		int op = a_inf_b(clef, pair->valeur, nb_clef);
+		printf("%d  inf?  %d  ->  %d\n", clef, pair->valeur, op);
+		
+		//int cond = appartient_ouvert_ferme(ma_valeur, v_pair, clef, nb_clef);
+		
+		//(c1 > 0) && (c2 <= 0)
+		if ( op ) {
 			// ainsi, je prends le plus grand pair strictement inférieur à la clef
-			pair_index = i; 
+			pair_index = i;
+			//printf("%d  ok  (%d)\n", pair->valeur, clef);
 		}
+		
+		
 	}
 	
 	return pair_index;
