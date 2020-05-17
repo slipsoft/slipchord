@@ -7,7 +7,6 @@ NP          ?= 11
 MPIRUN      := mpirun
 MPIFLAGS    += --oversubscribe -np $(NP)
 
-#$(EXEC): $(EXEC).o init_valeurs_pairs.o # pour rajouter des dépendances
 
 ifeq ($(DEBUG),yes)
 	CFLAGS += -g
@@ -25,6 +24,33 @@ $(EXEC): $(EXEC).o init_valeurs_pairs.o
 .PHONY: run
 run: $(EXEC)
 	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	$(MPIRUN) $(MPIFLAGS) $(EXEC)
+	
 
 .PHONY: clean
 clean:

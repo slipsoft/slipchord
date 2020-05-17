@@ -40,8 +40,7 @@ void init_pairs_TD(int **p_pairs_valeurs,
 }
 
 
-/* Initialisation des pairs d'une manière aléatoire.
-*/
+// Initialisation des pairs d'une manière aléatoire.
 void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
                                      int *p_nombre_pairs, int *p_nombre_clefs,
                                      int *p_nombre_clefs_exposant)
@@ -49,6 +48,9 @@ void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
 	int nombre_pairs;
 	int nombre_clefs;
 	int nombre_clefs_exposant = 6;
+	
+	// Initialisation du nombre de clefs
+	// Un left shift élève à la bonne puissance de 2.
 	nombre_clefs = 1 << nombre_clefs_exposant;
 	
 	MPI_Comm_size(MPI_COMM_WORLD, &nombre_pairs);
@@ -137,9 +139,9 @@ struct ftable_element *creer_finger_table(int ma_valeur, int nombre_clefs_exposa
 		int distance_min = -1;
 		
 		/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
-			i.e. je prends la plus petite distance entre v_clef et un pair,
-			dans le sens contraire au sens trigonométrique (distance donc
-			comprise entre 0 et nombre_clefs-1). */
+		   i.e. je prends la plus petite distance entre v_clef et un pair,
+		   dans le sens contraire au sens trigonométrique (distance donc
+		   comprise entre 0 et nombre_clefs-1). */
 		for (int p_ind = 0; p_ind < nombre_pairs; ++p_ind) {
 			int p_val = tableau_classe_valeurs_pairs[p_ind];
 			
