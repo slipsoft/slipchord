@@ -6,4 +6,4 @@
 
 void init_table(int *table, int size);
 void print_table(int *table, int size);
-void print_ftable(struct ftable_element *table, int size);
+void print_ftable(struct pair *table, int size);
