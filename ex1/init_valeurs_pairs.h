@@ -7,6 +7,7 @@ struct ftable_element {
 	int valeur, rang; // la valeur et le rang du processus.
 };
 
+int qsort_compare_int(const void* a, const void* b);
 
 /* Initialisation des pairs selon l'énoncé du TD CHORD. */
 void init_pairs_TD(int **p_pairs_valeurs,
