@@ -42,11 +42,10 @@ void init_pairs_TD(int **p_pairs_valeurs,
 
 /* Initialisation des pairs d'une manière aléatoire.
 */
-void init_pairs_aleatoire(int **p_pairs_valeurs,
-                         int *p_nombre_pairs, int *p_nombre_clefs,
-                         int *p_nombre_clefs_exposant)
+void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
+                                     int *p_nombre_pairs, int *p_nombre_clefs,
+                                     int *p_nombre_clefs_exposant)
 {
-	
 	int nombre_pairs;
 	int nombre_clefs;
 	int nombre_clefs_exposant = 6;
@@ -89,16 +88,79 @@ void init_pairs_aleatoire(int **p_pairs_valeurs,
 	// même s'il y a un nombre fini de cases, car il y a beaucoup plus
 	// de cases possibles que de pairs.
 	
-	qsort(pairs_valeurs, nombre_pairs, sizeof(int), qsort_compare_int);
 	
-	for (int pair_index = 0; pair_index < nombre_pairs; ++pair_index) {
+	/*for (int pair_index = 0; pair_index < nombre_pairs; ++pair_index) {
 		printf("pair %d  valeur %d \n",
 			pair_index, pairs_valeurs[pair_index]);
-	}
+	}*/
 	
 	// Retours
 	*p_pairs_valeurs = pairs_valeurs;
 	*p_nombre_pairs = nombre_pairs;
 	*p_nombre_clefs = nombre_clefs;
 	*p_nombre_clefs_exposant = nombre_clefs_exposant;
+}
+
+
+
+void init_pairs_aleatoire_classe(int **p_pairs_valeurs,
+                                 int *p_nombre_pairs, int *p_nombre_clefs,
+                                 int *p_nombre_clefs_exposant)
+{
+	init_pairs_aleatoire_non_classe(p_pairs_valeurs, p_nombre_pairs, p_nombre_clefs, p_nombre_clefs_exposant);
+	qsort(*p_pairs_valeurs, *p_nombre_pairs, sizeof(int), qsort_compare_int);
+}
+
+
+struct ftable_element *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
+                                          int *tableau_classe_valeurs_pairs,
+					  int nombre_pairs)
+{
+	// Valeur associée au pair d'index i_pair
+	//int ma_valeur = pairs_valeurs[i_pair];
+	
+	int nombre_clefs = 1 << nombre_clefs_exposant;
+	
+	// Finger table de ce processus (d'index i_pair)
+	struct ftable_element *f_table = malloc(sizeof(struct ftable_element) * nombre_clefs_exposant);
+	// ---- f_tables_pairs[i_pair] = f_table;
+	
+	
+	// Je détermine toutes les associations clef - pair en charge de cette clef.
+	for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
+		
+		// Valeur de la clef à l'emplacement i_clef de la finger_table
+		int v_clef = (ma_valeur + (1 << i_clef)) % nombre_clefs;
+		
+		// Je trouve le pair en charge de cette clef
+		int i_pair_associe;
+		int distance_min = -1;
+		
+		/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
+			i.e. je prends la plus petite distance entre v_clef et un pair,
+			dans le sens contraire au sens trigonométrique (distance donc
+			comprise entre 0 et nombre_clefs-1). */
+		for (int p_ind = 0; p_ind < nombre_pairs; ++p_ind) {
+			int p_val = tableau_classe_valeurs_pairs[p_ind];
+			
+			// Si la valeur du pair est plus petite que la clef, je rajoute un tour.
+			if (p_val < v_clef) p_val += nombre_clefs;
+			
+			// La valeur du pair est donc supérieure ou égale à la valeur de la clef.
+			int dist = p_val - v_clef;
+			if ((distance_min == -1)
+			|| ((distance_min != -1) && (dist < distance_min))) {
+				distance_min = dist;
+				i_pair_associe = p_ind;
+			}
+		}
+		
+		// valeur du pair en charge de cette clef
+		int v_pair_associe = tableau_classe_valeurs_pairs[i_pair_associe];
+		
+		f_table[i_clef].valeur = v_pair_associe;
+		f_table[i_clef].rang = i_pair_associe + 1; // le processus 0 est le simulateur
+	}
+	
+	return f_table;
 }
