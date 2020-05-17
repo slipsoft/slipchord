@@ -14,7 +14,7 @@ endif
 .PHONY: all
 all: $(EXEC)
 
-$(EXEC): $(EXEC).o
+$(EXEC): $(EXEC).o utils.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c

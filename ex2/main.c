@@ -2,15 +2,21 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <unistd.h>
+#include "utils.h"
 
-//************   LES TAGS
-#define INIT_ELECTION 0 // Ask for election
-#define ELECTED       1 // Inform others that
+//************   TAGS
+#define INIT          0 // Message to init the peertable
+#define DONE          1 // Message to propagate the peertable
 
-//************   LES VARIABLES MPI
-int NB;                 // nb total de processus
-int rank;               // mon identifiant
-int left, right;        // les identifiants de mes voisins gauche et droit
+//************   VARIABLES MPI
+// total process number
+int NB;
+// Current process mpi id
+int rank;
+// Current Process chord value
+int value;
+// Left and right neighbours
+int left, right;
 int running = 1;
 int initiator;
 
@@ -18,16 +24,17 @@ int initiator;
 
 void receive_message(MPI_Status *status, int *value)
 {
-	MPI_Recv(value, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
+	MPI_Recv(value, NB, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
 }
 
-void send_message(int dest, int tag, int val)
+void send_message(int dest, int tag, int *val)
 {
 	// printf("P%d> Send message %d to %d\n", rank, tag, dest);
-	MPI_Send(&val, 1, MPI_INT, dest, tag, MPI_COMM_WORLD);
+	MPI_Send(val, NB, MPI_INT, dest, tag, MPI_COMM_WORLD);
 }
 
-int check_termination() {
+int check_termination()
+{
 	return running;
 }
 
@@ -36,43 +43,56 @@ int main(int argc, char *argv[])
 {
 
 	MPI_Status status;
-	int value;
+	int *payload = malloc(sizeof(int) * NB + 1);
+	int token_index = NB;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &NB);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	left = (rank + NB - 1) % NB;
-	right = (rank + 1) % NB;
-	printf("P%d> Started\n", rank);
+	int *payload = malloc(sizeof(int) * NB + 1);
+	int token_index = NB;
 
 	srand(getpid());
+
+	left = (rank + NB - 1) % NB;
+	right = (rank + 1) % NB;
+	value = rand() % (1 << NB);
 	initiator = rand() % 2;
+
+	printf("P%d> Started with value %d\n", rank, value);
+
 
 	if (initiator) {
 		printf("P%d> Is initiator\n", rank);
-		send_message(right, INIT_ELECTION, rank);
+		init_table(payload, NB);
+		payload[rank] = value;
+		payload[token_index] = rank;
+		send_message(right, INIT, payload);
 	}
 
 	while (check_termination()) {
-		receive_message(&status, &value);
-		if (status.MPI_TAG == INIT_ELECTION) {
-			// Ask for election
-			if (initiator && value < rank) {
-				printf("P%d> Deleted the token of proc %d\n", rank, value);
-			} else if (value == rank) {
-				send_message(right, ELECTED, rank);
+		receive_message(&status, payload);
+		if (status.MPI_TAG == INIT) {
+			// peer_table initialization message.
+			if (initiator && payload[token_index] < rank) {
+				printf("P%d> Deleted one INIT message\n", rank);
+			} else if (payload[rank] == value) {
+				send_message(right, DONE, payload);
 			} else {
-				send_message(right, INIT_ELECTION, value);
+				payload[rank] = value;
+				send_message(right, INIT, payload);
 			}
-		} else if (status.MPI_TAG == ELECTED) {
-			// Someone has been elected
-			printf("P%d> Elected the proc %d\n", rank, value);
-			send_message(right, ELECTED, value);
+		} else if (status.MPI_TAG == DONE) {
+			// the peer_table is initialized.
+			printf("P%d> Received the whole peer_table\n", rank);
+			print_table(payload, NB);
+			send_message(right, DONE, payload);
 			running = 0;
 		}
 	}
 
+	free(payload);
 	MPI_Finalize();
 	return 0;
 }
