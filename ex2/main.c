@@ -3,10 +3,12 @@
 #include <mpi.h>
 #include <unistd.h>
 #include "utils.h"
+#include "../ex1/init_valeurs_pairs.h"
 
 //************   TAGS
 #define INIT          0 // Message to init the peertable
 #define DONE          1 // Message to propagate the peertable
+#define VALUE         2 // Value sent by the simulator
 
 //************   VARIABLES MPI
 // total process number
@@ -38,18 +40,24 @@ int check_termination()
 	return running;
 }
 
-//************   LE PROGRAMME   ***************************
-int main(int argc, char *argv[])
+void simulator()
 {
+	int *peertable;
+	int nb_peers;
+	int nb_keys;
+	int nb_keys_exp;
+	init_pairs_aleatoire(&peertable, &nb_peers, &nb_keys, &nb_keys_exp);
+	for (int i = 0; i < nb_peers; i++) {
+		MPI_Send(&peertable[i], 1, MPI_INT, i, VALUE, MPI_COMM_WORLD);
+	}
+	free(peertable);
+}
+
+void peer()
+{
+	NB--; // decrease to omit the simulator
 
 	MPI_Status status;
-	int *payload = malloc(sizeof(int) * NB + 1);
-	int token_index = NB;
-
-	MPI_Init(&argc, &argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &NB);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
 	int *payload = malloc(sizeof(int) * NB + 1);
 	int token_index = NB;
 
@@ -57,8 +65,8 @@ int main(int argc, char *argv[])
 
 	left = (rank + NB - 1) % NB;
 	right = (rank + 1) % NB;
-	value = rand() % (1 << NB);
 	initiator = rand() % 2;
+	MPI_Recv(&value, 1, MPI_INT, NB, VALUE, MPI_COMM_WORLD, &status);
 
 	printf("P%d> Started with value %d\n", rank, value);
 
@@ -93,6 +101,21 @@ int main(int argc, char *argv[])
 	}
 
 	free(payload);
+}
+
+//************   LE PROGRAMME   ***************************
+int main(int argc, char *argv[])
+{
+
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &NB);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if (rank == NB - 1) {
+		simulator();
+	} else {
+		peer();
+	}
 	MPI_Finalize();
 	return 0;
 }
