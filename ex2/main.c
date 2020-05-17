@@ -65,6 +65,7 @@ void peer()
 	int payload_size = NB + 1;
 	int *payload = malloc(sizeof(int) * payload_size);
 	int token_index = NB;
+	struct pair *peer_table;
 
 	srand(getpid());
 
@@ -100,13 +101,15 @@ void peer()
 		} else if (status.MPI_TAG == DONE) {
 			// the peer_table is initialized.
 			printf("P%d> Received the whole peer_table\n", rank);
-			qsort(payload, NB, sizeof(int), qsort_compare_int);
-			struct ftable_element *ftable = creer_finger_table(
+			peer_table = creer_tableau_pair(payload, NB);
+			qsort(peer_table, NB, sizeof(struct pair), qsort_compare_pair);
+			struct pair *ftable = creer_finger_table(
 				value,
 				nb_keys_exp,
-				payload,
+				peer_table,
 				NB
 			);
+			free(peer_table);
 			printf("P%d> value %d\n", rank, value);
 			print_ftable(ftable, nb_keys_exp);
 			send_message(right, DONE, payload, NB);

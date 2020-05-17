@@ -19,7 +19,7 @@ void print_table(int *table, int size)
 	}
 }
 
-void print_ftable(struct ftable_element *table, int size)
+void print_ftable(struct pair *table, int size)
 {
 	printf("Finger table:\n");
 	for (int i = 0; i < size; i++) {
