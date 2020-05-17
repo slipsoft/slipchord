@@ -7,6 +7,8 @@ NP          ?= 11
 MPIRUN      := mpirun
 MPIFLAGS    += --oversubscribe -np $(NP)
 
+#$(EXEC): $(EXEC).o init_valeurs_pairs.o # pour rajouter des dépendances
+
 ifeq ($(DEBUG),yes)
 	CFLAGS += -g
 endif
@@ -14,7 +16,7 @@ endif
 .PHONY: all
 all: $(EXEC)
 
-$(EXEC): $(EXEC).o
+$(EXEC): $(EXEC).o init_valeurs_pairs.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c
