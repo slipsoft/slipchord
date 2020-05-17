@@ -24,15 +24,15 @@ int initiator;
 
 //************   LES FONCTIONS   ***************************
 
-void receive_message(MPI_Status *status, int *value)
+void receive_message(MPI_Status *status, int *value, int size)
 {
-	MPI_Recv(value, NB, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
+	MPI_Recv(value, size, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
 }
 
-void send_message(int dest, int tag, int *val)
+void send_message(int dest, int tag, int *val, int size)
 {
 	// printf("P%d> Send message %d to %d\n", rank, tag, dest);
-	MPI_Send(val, NB, MPI_INT, dest, tag, MPI_COMM_WORLD);
+	MPI_Send(val, size, MPI_INT, dest, tag, MPI_COMM_WORLD);
 }
 
 int check_termination()
@@ -48,7 +48,7 @@ void simulator()
 	int nb_keys_exp;
 	init_pairs_aleatoire(&peertable, &nb_peers, &nb_keys, &nb_keys_exp);
 	for (int i = 0; i < nb_peers; i++) {
-		MPI_Send(&peertable[i], 1, MPI_INT, i, VALUE, MPI_COMM_WORLD);
+		send_message(i, VALUE, &peertable[i], 1);
 	}
 	free(peertable);
 }
@@ -58,7 +58,8 @@ void peer()
 	NB--; // decrease to omit the simulator
 
 	MPI_Status status;
-	int *payload = malloc(sizeof(int) * NB + 1);
+	int payload_size = NB + 1;
+	int *payload = malloc(sizeof(int) * payload_size);
 	int token_index = NB;
 
 	srand(getpid());
@@ -76,26 +77,26 @@ void peer()
 		init_table(payload, NB);
 		payload[rank] = value;
 		payload[token_index] = rank;
-		send_message(right, INIT, payload);
+		send_message(right, INIT, payload, payload_size);
 	}
 
 	while (check_termination()) {
-		receive_message(&status, payload);
+		receive_message(&status, payload, payload_size);
 		if (status.MPI_TAG == INIT) {
 			// peer_table initialization message.
 			if (initiator && payload[token_index] < rank) {
-				printf("P%d> Deleted one INIT message\n", rank);
+				printf("P%d> Deleted message from %d\n", rank, payload[token_index]);
 			} else if (payload[rank] == value) {
-				send_message(right, DONE, payload);
+				send_message(right, DONE, payload, NB);
 			} else {
 				payload[rank] = value;
-				send_message(right, INIT, payload);
+				send_message(right, INIT, payload, payload_size);
 			}
 		} else if (status.MPI_TAG == DONE) {
 			// the peer_table is initialized.
 			printf("P%d> Received the whole peer_table\n", rank);
 			print_table(payload, NB);
-			send_message(right, DONE, payload);
+			send_message(right, DONE, payload, NB);
 			running = 0;
 		}
 	}
