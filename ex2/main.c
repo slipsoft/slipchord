@@ -109,6 +109,7 @@ void peer()
 				peer_table,
 				NB
 			);
+			free(peer_table);
 			printf("P%d> value %d\n", rank, value);
 			print_ftable(ftable, nb_keys_exp);
 			send_message(right, DONE, payload, NB);
