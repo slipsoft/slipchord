@@ -6,6 +6,9 @@
 int appartient(int a, int b, int k, int N);
 int a_moins_b(int a, int b, int N);
 int b_moins_a(int a, int b, int N);
+int a_inf_b(int a, int b, int k);
+int appartient_arc_oriente_large(int a, int b, int k, int N);
+int appartient_arc_oriente_strict(int a, int b, int k, int N);
 
 
 /*int appartient(int a, int b, int k, int N)
@@ -13,20 +16,58 @@ int b_moins_a(int a, int b, int N);
 	if (a)
 }*/
 
-int appartient_arc_oriente(int a, int b, int k, int N)
+int appartient_arc_oriente_large(int a, int b, int k, int N)
+{
+	if (a == b) return 0;
+	if (k == a) return 1;
+	if (k == b) return 1;
+	return appartient_arc_oriente_strict(a, b, k, N);
+}
+
+int appartient_arc_oriente_strict(int a, int b, int k, int N)
+{
+	k = k % N;
+	// Cas simple, comme dans les entiers naturels
+	if (a <= b) {
+		if ( (a < k) && (k < b) ) return 1;
+		return 0;
+	} else {
+		int entre_a_et_zero = (k > a); // k <= N de base
+		int entre_b_et_zero = (k < b); // k >= 0 de base
+		if (entre_a_et_zero || entre_b_et_zero) return 1;
+		return 0;
+	}
+}
+
+
+int appartient_arc_oriente_ancien(int a, int b, int k, int N)
 {
 	int c1 = a_moins_b(k, a, N);
 	int c2 = a_moins_b(k, b, N);
+	printf("%d ? [%d,%d] ->   (k-a) %d   (k-b)   %d \n", k, a, b, c1, c2);
 	
 	if ( (c1 >= 0) && (c2 <= 0) ) return 1;
 	return 0;
 	
 }
 
-void test_appartient(int a, int b, int k)
+/*void test_appartient(int a, int b, int k)
 {
 	int res = appartient_arc_oriente(a, b, k, 12);
 	printf("%d dans [%d, %d]   :   %d \n", k, a, b, res);
+	printf("--------------------------\n");
+}*/
+
+void test_app2(int a, int b, int k)
+{
+	
+	int sup2prev = a_inf_b(a-1, k, 64);
+	int inf2curr = a_inf_b(k, b+1, 64);
+	
+	int cn = (sup2prev && inf2curr);
+	
+	int res = appartient_arc_oriente_large(a, b, k, 64);
+	printf("%d dans [%d, %d]   :   %d   %d \n", k, a, b, res, cn);
 	printf("--------------------------\n");
 }
 
@@ -51,6 +92,13 @@ int b_moins_a(int a, int b, int N)
 	}
 }
 
+int a_inf_b(int a, int b, int k) {
+	int res = b_moins_a(a, b, k);
+	
+	if (res > 0) return 1;
+	return 0;
+}
+
 void test_heure(int a, int b)
 {
 	int k = 12; // 12h sur le cadran
@@ -69,14 +117,14 @@ int main(void) // int argc, char *argv[]
 	// Test sur les heures de la journée (c'est simple et visuel)
 	
 	printf("--------------------------\n");
-	test_appartient(1, 3, 4);
+	/*test_appartient(1, 3, 4);
 	test_appartient(1, 3, 2);
 	test_appartient(1, 9, 4);
 	test_appartient(9, 2, 1);
-	/*test_appartient(1, 3, 4);
-	test_appartient(1, 3, 4);
-	test_appartient(1, 3, 4);
-	test_appartient(1, 3, 4);*/
+	test_appartient(9, 0, 0);*/
+	test_app2(38, 42, 7);
+	test_app2(38, 48, 7);
+	test_app2(38, 8, 7);
 	
 	/*test_heure(9, 0);
 	test_heure(9, 12);

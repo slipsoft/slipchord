@@ -1,7 +1,7 @@
 EXEC        := main
 DEBUG       := yes
 CC          := mpicc
-CFLAGS      := -W -Wall
+CFLAGS      := -W -Wall  # -Wno-unused-variable
 LDFLAGS     :=
 NP          ?= 11
 MPIRUN      := mpirun

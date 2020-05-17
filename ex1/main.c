@@ -19,6 +19,7 @@
 #define info(str, ...) print_log(NULL, __func__, __LINE__, str)
 
 
+
 // Elevation à la puissance d'entiers naturels
 /*int natural_power(int x, int y)
 {
@@ -38,8 +39,13 @@ void simulateur(void);
 void pair_classique(void);
 int b_moins_a(int a, int b, int k);
 int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
+int trouver_index_responsable_sylv(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
 int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
 void print_log(const char *msg_type, const char *fct_name, const int line, const char *str);
+int trouver_index_res(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
+
+int appartient_arc_oriente_large(int a, int b, int k, int N);
+int appartient_arc_oriente_strict(int a, int b, int k, int N);
 
 
 int qsort_compare_int(const void* a, const void* b)
@@ -243,6 +249,9 @@ void simulateur(void)
 	}
 	
 	// Affichage des finger table :
+	int vtest = 7;
+	printf("----- Recherche de la valeur %d -----\n", vtest);
+	printf("Format pair -> (pair à qui envoyer la requête)\n");
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		struct ftable_element *f_table = f_tables_pairs[i_pair];
@@ -257,18 +266,48 @@ void simulateur(void)
 		}*/
 		
 		// test de qui est responsable de quelle valeur :
-		int vtest = 7;
-		int v_in;
+		int v_in, vv_in;
 		int p_in = trouver_index_responsable_nico(f_table, nombre_clefs_exposant, vtest, v_pair);
+		//int p_in = trouver_index_responsable_sylv(f_table, nombre_clefs_exposant, vtest, v_pair);
 		if (p_in != -1) {
 			v_in = f_table[p_in].valeur;
 		} else {
 			v_in = v_pair;
 		}
-		printf("Pair %d  (%d -> (%d)%d) \n", v_pair, vtest, p_in, v_in);
+		
+		int verif = trouver_index_res(f_table, nombre_clefs_exposant, vtest, v_pair);
+		
+		if (verif != -1) {
+			vv_in = f_table[verif].valeur;
+			int val_succ = f_table[0].valeur;
+			if (vv_in == val_succ) {
+				printf("(p %d j'envoie à mon successeur (%d))\n", v_pair, vv_in);
+			} else {
+				printf("                                                 (p %d -> %d)   verif %d \n", v_pair, vv_in, verif);
+			}
+		} else {
+			if (v_pair == vtest) {
+				printf("(p %d je suis en charge de cette clef)\n", v_pair);
+			} else {
+				printf("(p %d j'envoie à mon successeur)\n", v_pair);
+			}
+			//vv_in = v_pair;
+		}
+		
+		/*if (p_in != verif) {
+			printf("--- non equals %d %d \n", p_in, verif);
+		}*/
+		
+		/*
+		if (verif != p_in) {
+			printf("(p %d) Valeurs différentes : n %d (%d)   s %d (%d)\n", v_pair, p_in, v_in, verif, vv_in);
+		}*/
+		
+		//printf("Pair %d  (%d -> (%d)%d) \n", v_pair, vtest, p_in, v_in);
+		//printf("(p %d -> %d)\n", v_pair, vv_in);
 		//printf("Responsable de %d   :   %d\n", vtest, p_in);
 	}
-	
+	 
 	// Envoi des valeurs aux autres processus
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
@@ -337,7 +376,7 @@ void pair_classique(void)
 	// Réception de la finger table
 	for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
 		// Valeur de la clef à l'index i_clef
-		int v_clef = (valeur_associee + (1 << i_clef)) % nombre_clefs;
+		//int v_clef = (valeur_associee + (1 << i_clef)) % nombre_clefs;
 		struct ftable_element *elem = &finger_table[i_clef];
 		MPI_Recv(&(elem->valeur), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 		MPI_Recv(&(elem->rang), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
@@ -352,8 +391,8 @@ void pair_classique(void)
 	int ack = 0;
 	MPI_Send(&ack, 1, MPI_INT, RANG_SIMULATEUR, TAG_INITACK, MPI_COMM_WORLD);
 	
-	int continuer = 1;
-	/*
+	/*int continuer = 1;
+	
 	while (continuer) {
 		int valeur_clef;
 		// Attente de la réception d'un message
@@ -384,6 +423,9 @@ void pair_classique(void)
 	free(finger_table);
 }
 
+
+
+
 int a_moins_b(int a, int b, int k) {
 	return - b_moins_a(a, b, k);
 }
@@ -413,6 +455,16 @@ int b_moins_a(int a, int b, int k)
 	}
 }
 
+int appartient_arc_oriente(int a, int b, int k, int N)
+{
+	int c1 = a_moins_b(k, a, N);
+	int c2 = a_moins_b(k, b, N);
+	
+	if ( (c1 >= 0) && (c2 <= 0) ) return 1;
+	return 0;
+	
+}
+
 // Regarde si k appartient à ]a, b]
 int appartient_ouvert_ferme(int a, int b, int k, int N) {
 	if (a < b) return ((k > a) && (k <= b));
@@ -428,9 +480,62 @@ int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_
 	for (i = 0; i < len_ftable; i++) {
 		prev = curr;
 		curr = finger_table[i].valeur;
-		printf("i: %d, clef: %d, prev: %2d, curr: %2d\n", i, clef, prev, curr);
+		//printf("i: %d, clef: %d, prev: %2d, curr: %2d\n", i, clef, prev, curr);
 		sup2prev = a_inf_b(prev - 1, clef, nb_clef);
 		inf2curr = a_inf_b(clef, curr + 1, nb_clef);
+		if (sup2prev && inf2curr) {
+			return i - 1;
+		}
+	}
+	return i - 1;
+}
+
+int trouver_index_res(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+{
+	if (clef == ma_valeur) return -1;
+	int index_retenu = -1;
+	int nb_clefs = (1 << len_ftable);
+	
+	for (int i = 0; i < len_ftable; i++) {
+		int v_pair = finger_table[i].valeur;
+		int clef_dans_intervalle = appartient_arc_oriente_strict(ma_valeur, v_pair, clef, nb_clefs);
+		
+		//if (ma_valeur == 38) {
+			printf("p %d  [%d] -> %d  ds_int %d  [%d,%d] c %d\n",
+			ma_valeur, i, v_pair, clef_dans_intervalle, ma_valeur, v_pair, clef);
+		//}
+		
+		if (clef_dans_intervalle) {
+			//break;
+		} else {
+			index_retenu = i;
+		}
+	}
+	return index_retenu;
+}
+
+int trouver_index_responsable_sylv(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+{
+	int i, prev, sup2prev, inf2curr;
+	int curr = ma_valeur;
+	int nb_clef = (1 << len_ftable);
+
+	for (i = 0; i < len_ftable; i++) {
+		prev = curr;
+		curr = finger_table[i].valeur;
+		//printf("i: %d, clef: %d, prev: %2d, curr: %2d\n", i, clef, prev, curr);
+		sup2prev = a_inf_b(prev - 1, clef, nb_clef);
+		inf2curr = a_inf_b(clef, curr + 1, nb_clef);
+		
+		int condNico = (sup2prev && inf2curr);
+		
+		//int condSylv = appartient_arc_oriente(prev, curr, clef, nb_clef);
+		int condSylv = appartient_arc_oriente(ma_valeur, curr, clef, nb_clef);
+		
+		if (condSylv != condNico) {
+			printf("pas bonnes valeurs : s %d  n %d", condSylv, condNico);
+		}
+		
 		if (sup2prev && inf2curr) {
 			return i - 1;
 		}
@@ -490,6 +595,28 @@ int trouver_index_responsable(struct ftable_element *finger_table, int len_ftabl
 	return pair_index;
 }
 
+int appartient_arc_oriente_large(int a, int b, int k, int N)
+{
+	if (a == b) return 0;
+	if (k == a) return 1;
+	if (k == b) return 1;
+	return appartient_arc_oriente_strict(a, b, k, N);
+}
+
+int appartient_arc_oriente_strict(int a, int b, int k, int N)
+{
+	k = k % N;
+	// Cas simple, comme dans les entiers naturels
+	if (a <= b) {
+		if ( (a < k) && (k < b) ) return 1;
+		return 0;
+	} else {
+		int entre_a_et_zero = (k > a); // k <= N de base
+		int entre_b_et_zero = (k < b); // k >= 0 de base
+		if (entre_a_et_zero || entre_b_et_zero) return 1;
+		return 0;
+	}
+}
 
 /*
 #define TAG_INIT 1
