@@ -9,6 +9,21 @@ int qsort_compare_int(const void* a, const void* b)
 	return *((int*) a) - *((int*) b);
 }
 
+int qsort_compare_pair(const void* a, const void* b)
+{
+	return ((struct pair *) a)->valeur - ((struct pair *) b)->valeur;
+}
+
+struct pair *creer_tableau_pair(int *pairs_valeurs, int taille)
+{
+	struct pair *tableau = malloc(sizeof(struct pair) * taille);
+	for (int i = 0; i < taille; i++) {
+		tableau[i].valeur = pairs_valeurs[i];
+		tableau[i].rang = i;
+	}
+	return tableau;
+}
+
 /* Initialisation des pairs selon l'énoncé du TD CHORD.
 */
 void init_pairs_TD(int **p_pairs_valeurs,
@@ -112,17 +127,18 @@ void init_pairs_aleatoire_classe(int **p_pairs_valeurs,
 }
 
 
-struct ftable_element *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
-                                          int *tableau_classe_valeurs_pairs,
+struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
+                                          struct pair *tableau_classe_pairs,
 					  int nombre_pairs)
 {
+
 	// Valeur associée au pair d'index i_pair
 	//int ma_valeur = pairs_valeurs[i_pair];
 	
 	int nombre_clefs = 1 << nombre_clefs_exposant;
 	
 	// Finger table de ce processus (d'index i_pair)
-	struct ftable_element *f_table = malloc(sizeof(struct ftable_element) * nombre_clefs_exposant);
+	struct pair *f_table = malloc(sizeof(struct pair) * nombre_clefs_exposant);
 	// ---- f_tables_pairs[i_pair] = f_table;
 	
 	
@@ -133,33 +149,28 @@ struct ftable_element *creer_finger_table(int ma_valeur, int nombre_clefs_exposa
 		int v_clef = (ma_valeur + (1 << i_clef)) % nombre_clefs;
 		
 		// Je trouve le pair en charge de cette clef
-		int i_pair_associe;
+		struct pair pair_associe;
 		int distance_min = -1;
 		
 		/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
 			i.e. je prends la plus petite distance entre v_clef et un pair,
 			dans le sens contraire au sens trigonométrique (distance donc
 			comprise entre 0 et nombre_clefs-1). */
-		for (int p_ind = 0; p_ind < nombre_pairs; ++p_ind) {
-			int p_val = tableau_classe_valeurs_pairs[p_ind];
+		for (int i = 0; i < nombre_pairs; ++i) {
+			struct pair pair = tableau_classe_pairs[i];
 			
 			// Si la valeur du pair est plus petite que la clef, je rajoute un tour.
-			if (p_val < v_clef) p_val += nombre_clefs;
+			if (pair.valeur < v_clef) pair.valeur += nombre_clefs;
 			
 			// La valeur du pair est donc supérieure ou égale à la valeur de la clef.
-			int dist = p_val - v_clef;
+			int dist = pair.valeur - v_clef;
 			if ((distance_min == -1)
 			|| ((distance_min != -1) && (dist < distance_min))) {
 				distance_min = dist;
-				i_pair_associe = p_ind;
+				pair_associe = pair;
 			}
 		}
-		
-		// valeur du pair en charge de cette clef
-		int v_pair_associe = tableau_classe_valeurs_pairs[i_pair_associe];
-		
-		f_table[i_clef].valeur = v_pair_associe;
-		f_table[i_clef].rang = i_pair_associe + 1; // le processus 0 est le simulateur
+		f_table[i_clef] = pair_associe;
 	}
 	
 	return f_table;

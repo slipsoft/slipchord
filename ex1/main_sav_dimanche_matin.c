@@ -31,18 +31,18 @@
 }*/
 
 
-struct ftable_element {
+struct pair {
 	int valeur, rang; // la valeur et le rang du processus.
 };
 
 void simulateur(void);
 void pair_classique(void);
 int b_moins_a(int a, int b, int k);
-int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
-int trouver_index_responsable_sylv(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
-int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
+int trouver_index_responsable_nico(struct pair *finger_table, int len_ftable, int clef, int ma_valeur);
+int trouver_index_responsable_sylv(struct pair *finger_table, int len_ftable, int clef, int ma_valeur);
+int trouver_index_responsable(struct pair *finger_table, int len_ftable, int clef, int ma_valeur);
 void print_log(const char *msg_type, const char *fct_name, const int line, const char *str);
-int trouver_index_res(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur);
+int trouver_index_res(struct pair *finger_table, int len_ftable, int clef, int ma_valeur);
 
 int appartient_arc_oriente_large(int a, int b, int k, int N);
 int appartient_arc_oriente_strict(int a, int b, int k, int N);
@@ -198,7 +198,7 @@ void simulateur(void)
 	// *** Calcul des finger table de chaque processus ***
 	
 	// Finger tables de tous les processus
-	struct ftable_element **f_tables_pairs = malloc(sizeof(struct ftable_element *) * nombre_pairs);
+	struct pair **f_tables_pairs = malloc(sizeof(struct pair *) * nombre_pairs);
 	
 	// Je répète l'opération pour chaque pair
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
@@ -207,7 +207,7 @@ void simulateur(void)
 		int v_pair = pairs_valeurs[i_pair];
 		
 		// Finger table de ce processus (d'index i_pair)
-		struct ftable_element *f_table = malloc(sizeof(struct ftable_element) * nombre_clefs_exposant);
+		struct pair *f_table = malloc(sizeof(struct pair) * nombre_clefs_exposant);
 		f_tables_pairs[i_pair] = f_table;
 		
 		
@@ -254,7 +254,7 @@ void simulateur(void)
 	printf("Format pair -> (pair à qui envoyer la requête)\n");
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-		struct ftable_element *f_table = f_tables_pairs[i_pair];
+		struct pair *f_table = f_tables_pairs[i_pair];
 		int v_pair = pairs_valeurs[i_pair];
 		//printf("--- Pair index %d  valeur %d ---\n", i_pair, v_pair);
 		/*for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
@@ -311,7 +311,7 @@ void simulateur(void)
 	// Envoi des valeurs aux autres processus
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-		struct ftable_element *f_table = f_tables_pairs[i_pair];
+		struct pair *f_table = f_tables_pairs[i_pair];
 		int v_pair = pairs_valeurs[i_pair];
 		int rang_pair = i_pair + 1;
 		// Envoi de l'exposant déterminant le nombre de clefs de la DHT
@@ -347,7 +347,7 @@ void simulateur(void)
 	
 	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-		struct ftable_element *f_table = f_tables_pairs[i_pair];
+		struct pair *f_table = f_tables_pairs[i_pair];
 		free(f_table);
 	}
 	
@@ -370,14 +370,14 @@ void pair_classique(void)
 	nombre_clefs = 1 << nombre_clefs_exposant;
 	MPI_Recv(&valeur_associee, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 	
-	struct ftable_element *finger_table = malloc(sizeof(struct ftable_element) * nombre_clefs_exposant);
+	struct pair *finger_table = malloc(sizeof(struct pair) * nombre_clefs_exposant);
 	
 	//printf("--- Pair index %d  valeur %d --- rcv\n", my_rank-1, valeur_associee);
 	// Réception de la finger table
 	for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
 		// Valeur de la clef à l'index i_clef
 		//int v_clef = (valeur_associee + (1 << i_clef)) % nombre_clefs;
-		struct ftable_element *elem = &finger_table[i_clef];
+		struct pair *elem = &finger_table[i_clef];
 		MPI_Recv(&(elem->valeur), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 		MPI_Recv(&(elem->rang), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 		
@@ -471,7 +471,7 @@ int appartient_ouvert_ferme(int a, int b, int k, int N) {
 	return (((k >= 0) && (k < b)) || ((k >= a) && (k < N)));
 }
 
-int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+int trouver_index_responsable_nico(struct pair *finger_table, int len_ftable, int clef, int ma_valeur)
 {
 	int i, prev, sup2prev, inf2curr;
 	int curr = ma_valeur;
@@ -490,7 +490,7 @@ int trouver_index_responsable_nico(struct ftable_element *finger_table, int len_
 	return i - 1;
 }
 
-int trouver_index_res(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+int trouver_index_res(struct pair *finger_table, int len_ftable, int clef, int ma_valeur)
 {
 	if (clef == ma_valeur) return -1;
 	int index_retenu = -1;
@@ -514,7 +514,7 @@ int trouver_index_res(struct ftable_element *finger_table, int len_ftable, int c
 	return index_retenu;
 }
 
-int trouver_index_responsable_sylv(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+int trouver_index_responsable_sylv(struct pair *finger_table, int len_ftable, int clef, int ma_valeur)
 {
 	int i, prev, sup2prev, inf2curr;
 	int curr = ma_valeur;
@@ -545,14 +545,14 @@ int trouver_index_responsable_sylv(struct ftable_element *finger_table, int len_
 
 // Trouver l'index du pair à qui envoyer un message récursif (dans ma finger table)
 // -1 signifie que le pair en charge de la clef est mon successeur.
-int trouver_index_responsable(struct ftable_element *finger_table, int len_ftable, int clef, int ma_valeur)
+int trouver_index_responsable(struct pair *finger_table, int len_ftable, int clef, int ma_valeur)
 {
 	// Je recherche le plus grand pair dont la clef est strictement plus petite que clef.
 	int pair_index = -1;
 	
 	// les pairs sont ordonnés par ordre croissant (en fonction des 2 puissance i)
 	for (int i = 0; i < len_ftable; ++i) {
-		struct ftable_element *pair = &finger_table[i];
+		struct pair *pair = &finger_table[i];
 		int v_pair = pair->valeur;
 		/*int v_ppair = ma_valeur + (1 << i);
 		
