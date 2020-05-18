@@ -1,4 +1,4 @@
-# Projet CHORD - Nicolas Peugnet - Sylvain JOUBE
+# Projet CHORD - Nicolas Peugnet - Sylvain Joube
 
 Dans tout les exercices de notre projet, le simulateur a pour rang MPI N-1, c'est à dire que c'est le processus ayant l’identifiant MPI le plus élevé. Le processus de rang 0 est un pair comme un autre.  
 

@@ -1,4 +1,4 @@
-# Projet CHORD - Nicolas Peugnet - Sylvain JOUBE
+# Projet CHORD - Nicolas Peugnet - Sylvain Joube
 
 ## Exercice 2 - Calcul des finger tables (9 points)
 

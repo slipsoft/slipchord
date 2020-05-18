@@ -1,4 +1,4 @@
-# Projet CHORD Sylvain JOUBE Nicolas PEUGNET
+# Projet CHORD - Nicolas Peugnet - Sylvain Joube
 
 ## Exercice 3 - Insertion d’un pair (5 points + bonus)
 
