@@ -13,7 +13,7 @@
 #define TAG_TERM 6 // se terminer
 #define TAG_TERM_ACK 7 // acquittement de la terminaison d'un processus
 
-#define RANG_SIMULATEUR 0
+int RANG_SIMULATEUR; // défini au début du main, c'est le rang du dernier processus MPI
 
 // Afficher un message d'erreur. Ne fonctionne qu'après MPI_Init()
 #define error(str) print_log("ERREUR", __func__, __LINE__, str)
@@ -30,7 +30,7 @@ void print_log(const char *msg_type, const char *fct_name, const int line, const
 int appartient_arc_oriente_large(int a, int b, int k, int N);
 int appartient_arc_oriente_strict(int a, int b, int k, int N);
 
-#define show_all_inf 0
+#define show_all_inf 1
 
 int show_full_debug_info = show_all_inf;
 int show_peers_messages = show_all_inf;
@@ -53,7 +53,7 @@ void simulateur(long cseed)
 	
 	srand(cseed);
 	
-	printf("VALEUR DE LA SEED ACTUELLE : %ld\n", cseed);
+	//printf("VALEUR DE LA SEED ACTUELLE : %ld\n", cseed);
 	
 	
 	// Initialisation des valeurs associées aux pairs
@@ -78,7 +78,8 @@ void simulateur(long cseed)
 		
 		// Affichage des pairs
 		for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-			printf(" - %d", pairs_valeurs[i_pair]);
+			//printf(" - %d", pairs_valeurs[i_pair]);
+			printf(" - %d", tableau_pairs[i_pair].valeur);
 		}
 		printf(" - \n");
 	}
@@ -98,12 +99,6 @@ void simulateur(long cseed)
 		creer_finger_table(v_pair, nombre_clefs_exposant, tableau_pairs, nombre_pairs);
 		
 		f_tables_pairs[i_pair] = f_table;
-    
-		/*
-		// Finger table de ce processus (d'index i_pair)
-		struct pair *f_table = malloc(sizeof(struct pair) * nombre_clefs_exposant);
-		f_tables_pairs[i_pair] = f_table;
-		*/
 		
 	}
 	
@@ -111,20 +106,21 @@ void simulateur(long cseed)
 	//int vtest = 7;
 	
 	if (show_full_debug_info) {
-	printf("\n------- Finger tables des pairs -------\n");
-	
-	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-		struct pair *f_table = f_tables_pairs[i_pair];
-		int v_pair = pairs_valeurs[i_pair];
-		printf("\n--- Finger table du pair %d (index %d) ---\n", v_pair, i_pair);
-		for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
-			int v_clef = (v_pair + (1 << i_clef)) % nombre_clefs;
-			int v_pair_responsable = f_table[i_clef].valeur;
-			int r_pair_responsable = f_table[i_clef].rang;
-			
-			
-			printf("   [%d]  clef(%3d)  pair(%3d)   rang_MPI(%2d)\n",
-			i_clef, v_clef, v_pair_responsable, r_pair_responsable);
+		printf("\n------- Finger tables des pairs -------\n");
+		
+		for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
+			struct pair *f_table = f_tables_pairs[i_pair];
+			int v_pair = pairs_valeurs[i_pair];
+			printf("\n--- Finger table du pair %d (index %d) ---\n", v_pair, i_pair);
+			for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
+				int v_clef = (v_pair + (1 << i_clef)) % nombre_clefs;
+				int v_pair_responsable = f_table[i_clef].valeur;
+				int r_pair_responsable = f_table[i_clef].rang;
+				
+				
+				printf("   [%d]  clef(%3d)  pair(%3d)   rang_MPI(%2d)\n",
+				i_clef, v_clef, v_pair_responsable, r_pair_responsable);
+			}
 		}
 		printf("\n\n");
 	}
@@ -134,7 +130,7 @@ void simulateur(long cseed)
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		struct pair *f_table = f_tables_pairs[i_pair];
 		int v_pair = pairs_valeurs[i_pair];
-		int rang_pair = i_pair + 1;
+		int rang_pair = i_pair;
 		
 		// Envoi de l'exposant déterminant le nombre de clefs de la DHT
 		MPI_Send(&nombre_clefs_exposant, 1, MPI_INT, rang_pair, TAG_INIT, MPI_COMM_WORLD);
@@ -151,7 +147,7 @@ void simulateur(long cseed)
 	// Attente de l'ack de tous les pairs
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		int ack;
-		int rang_pair = i_pair + 1;
+		int rang_pair = i_pair;
 		MPI_Recv(&ack, 1, MPI_INT, rang_pair, TAG_INITACK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 	
@@ -171,14 +167,14 @@ void simulateur(long cseed)
 	// Envoi du message de terminaison
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		int ack;
-		int rang_pair = i_pair + 1;
+		int rang_pair = i_pair;
 		MPI_Send(&ack, 1, MPI_INT, rang_pair, TAG_TERM, MPI_COMM_WORLD);
 	}
 	
 	// Attente de la fin de tous les processus pour afficher le message final
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		int ack;
-		int rang_pair = i_pair + 1;
+		int rang_pair = i_pair;
 		MPI_Recv(&ack, 1, MPI_INT, rang_pair, TAG_TERM_ACK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 	
@@ -213,16 +209,29 @@ void pair_classique(void)
 	MPI_Recv(&nombre_clefs_exposant, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 	MPI_Recv(&valeur_pair, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 	
+	int nombre_clefs = 1 << nombre_clefs_exposant;
+	
 	struct pair *finger_table = malloc(sizeof(struct pair) * nombre_clefs_exposant);
 	
 	// Réception de la finger table
 	for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
-		// Valeur de la clef à l'index i_clef
-		//int v_clef = (valeur_pair + (1 << i_clef)) % nombre_clefs;
 		struct pair *elem = &finger_table[i_clef];
 		MPI_Recv(&(elem->valeur), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 		MPI_Recv(&(elem->rang), 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
+		// Valeur de la clef à l'index i_clef
+		//int v_clef = (valeur_pair + (1 << i_clef)) % nombre_clefs;
 	}
+	
+	/*printf("\n||| Finger table reçue du pair %d (rang %d) |||\n", valeur_pair, mon_rang);
+	for (int ic = 0; ic < nombre_clefs_exposant; ++ic) {
+		int v_clef = (valeur_pair + (1 << ic)) % nombre_clefs;
+		int v_pair_responsable = finger_table[ic].valeur;
+		int r_pair_responsable = finger_table[ic].rang;
+		
+		
+		printf("   [%d]  clef(%3d)  pair(%3d)   rang_MPI(%2d)\n",
+		ic, v_clef, v_pair_responsable, r_pair_responsable);
+	}*/
 	
 	int ack = 0;
 	MPI_Send(&ack, 1, MPI_INT, RANG_SIMULATEUR, TAG_INITACK, MPI_COMM_WORLD);
@@ -434,21 +443,26 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
+	
+	RANG_SIMULATEUR = nb_proc - 1;
 
 	mon_id = my_rank;
 	
+	//printf("Rang %d\n", mon_id);
 	
 	int len = 1;
 	int seed_tab[len];
 	
 	if (mon_id == RANG_SIMULATEUR) {
+		
+		//time_t valeur_seed = 476234360;
 		time_t valeur_seed = get_rand_time(); //time(NULL);//1589751090;//
 		srand(valeur_seed);
 		
 		printf("SUPER SEED - VALEUR DE LA SUPER SEED : %ld\n", valeur_seed);
 		
 		for (int i = 0; i < len; ++i) {
-			seed_tab[i] = rand(); // 826563725
+			seed_tab[i] = rand(); // 826563725   1191622441
 		}
 	}
 	
@@ -460,9 +474,7 @@ int main(int argc, char *argv[])
 		}
 		usleep(100000);
 	}
-
-	//printf("Processus %d sur %d : Hello\n", my_rank, nb_proc);
-
+	
 	MPI_Finalize();
 	return 0;
 }

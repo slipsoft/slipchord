@@ -4,7 +4,7 @@
 
 
 struct pair {
-	int valeur, rang; // la valeur et le rang du processus.
+	int valeur, rang; // la valeur et le rang (MPI) du processus.
 };
 
 int qsort_compare_int(const void* a, const void* b);

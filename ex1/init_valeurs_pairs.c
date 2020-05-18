@@ -20,6 +20,7 @@ struct pair *creer_tableau_pair(int *pairs_valeurs, int taille)
 	for (int i = 0; i < taille; i++) {
 		tableau[i].valeur = pairs_valeurs[i];
 		tableau[i].rang = i;
+		//printf("creer_tableau_pair [%d] -> val %d  rg %d\n", i, tableau[i].valeur, tableau[i].rang);
 	}
 	return tableau;
 }
@@ -133,6 +134,11 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
                                           struct pair *tableau_classe_pairs,
 					  int nombre_pairs)
 {
+	/*printf("creer_finger_table pour %d\n", ma_valeur);
+	for (int i = 0; i < nombre_pairs; ++i) {
+		struct pair pair = tableau_classe_pairs[i];
+		printf("pair[%d rg %d] val %d\n", i, pair.rang, pair.valeur);
+	}*/
 
 	// Valeur associée au pair d'index i_pair
 	//int ma_valeur = pairs_valeurs[i_pair];
@@ -153,7 +159,7 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 		// Je trouve le pair en charge de cette clef
 		struct pair pair_associe;
 		int distance_min = -1;
-		
+		//printf("----------------- (pair %2d) CLEF %d\n", ma_valeur, i_clef);
 		/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
 		   i.e. je prends la plus petite distance entre v_clef et un pair,
 		   dans le sens contraire au sens trigonométrique (distance donc
@@ -161,17 +167,26 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 		for (int i = 0; i < nombre_pairs; ++i) {
 			struct pair pair = tableau_classe_pairs[i];
 			
+			int p_val = pair.valeur;
+			
 			// Si la valeur du pair est plus petite que la clef, je rajoute un tour.
-			if (pair.valeur < v_clef) pair.valeur += nombre_clefs;
+			
+			// énorme bug ici, incrément de la variable retournée.
+			//if (pair.valeur < v_clef) pair.valeur += nombre_clefs;
+			
+			if (p_val < v_clef) p_val += nombre_clefs;
 			
 			// La valeur du pair est donc supérieure ou égale à la valeur de la clef.
-			int dist = pair.valeur - v_clef;
+			int dist = p_val - v_clef;
 			if ((distance_min == -1)
 			|| ((distance_min != -1) && (dist < distance_min))) {
 				distance_min = dist;
 				pair_associe = pair;
+				//if (pair.valeur == 72) printf("(pair %2d) ??pair clef[%d] rg %d  val %d\n", ma_valeur, i_clef, pair.rang, pair.valeur);
+				
 			}
 		}
+		
 		f_table[i_clef] = pair_associe;
 	}
 	
