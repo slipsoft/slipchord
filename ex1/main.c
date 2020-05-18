@@ -343,7 +343,7 @@ void pair_classique(void)
 			//if (status.MPI_TAG == TAG_RECHERCHE_INIT) {
 			if (doit_renvoyer_message) {
 				if (show_peers_messages) {
-					printf("(pair %d rg %d) : je renvoie le message au demandeur : rang_MPI(%d)   val(%d) rg(%d).\n\n",
+					printf("(pair %d rg %d) : je renvoie le message au demandeur : rang_MPI(%d)  responsable : val(%d) rg(%d).\n\n",
 					valeur_pair, mon_rang, rang_retour_message, resp_valeur, resp_rang);
 				}
 				MPI_Send(&resp_valeur, 1, MPI_INT, rang_retour_message, TAG_RECHERCHE_TROUVE, MPI_COMM_WORLD);

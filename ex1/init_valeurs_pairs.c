@@ -131,8 +131,8 @@ void init_pairs_aleatoire_classe(int **p_pairs_valeurs,
 
 
 struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
-                                          struct pair *tableau_classe_pairs,
-					  int nombre_pairs)
+                                struct pair *tableau_classe_pairs,
+                                int nombre_pairs)
 {
 	/*printf("creer_finger_table pour %d\n", ma_valeur);
 	for (int i = 0; i < nombre_pairs; ++i) {
@@ -157,7 +157,7 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 		int v_clef = (ma_valeur + (1 << i_clef)) % nombre_clefs;
 		
 		// Je trouve le pair en charge de cette clef
-		struct pair pair_associe;
+		int index_pair_associe;
 		int distance_min = -1;
 		//printf("----------------- (pair %2d) CLEF %d\n", ma_valeur, i_clef);
 		/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
@@ -181,13 +181,13 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 			if ((distance_min == -1)
 			|| ((distance_min != -1) && (dist < distance_min))) {
 				distance_min = dist;
-				pair_associe = pair;
+				index_pair_associe = i;
 				//if (pair.valeur == 72) printf("(pair %2d) ??pair clef[%d] rg %d  val %d\n", ma_valeur, i_clef, pair.rang, pair.valeur);
 				
 			}
 		}
 		
-		f_table[i_clef] = pair_associe;
+		f_table[i_clef] = tableau_classe_pairs[index_pair_associe];
 	}
 	
 	return f_table;
