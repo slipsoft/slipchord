@@ -38,11 +38,9 @@ void send_message(int dest, int tag, int *val, int size)
 	MPI_Send(val, size, MPI_INT, dest, tag, MPI_COMM_WORLD);
 }
 
-int check_termination()
-{
-	return running;
-}
-
+/**
+ * Process of the simulator.
+ */
 void simulator()
 {
 	int *peertable;
@@ -57,6 +55,9 @@ void simulator()
 	free(peertable);
 }
 
+/**
+ * Process of a classic chord peer.
+ */
 void peer()
 {
 	NB--; // decrease to omit the simulator
@@ -86,7 +87,7 @@ void peer()
 		send_message(right, INIT, payload, payload_size);
 	}
 
-	while (check_termination()) {
+	while (running) {
 		receive_message(&status, payload, payload_size);
 		if (status.MPI_TAG == INIT) {
 			// peer_table initialization message.
@@ -102,6 +103,7 @@ void peer()
 			// the peer_table is initialized.
 			printf("P%d> Received the whole peer_table\n", rank);
 			peer_table = creer_tableau_pair(payload, NB);
+			// sort the peer table by the chrod value
 			qsort(peer_table, NB, sizeof(struct pair), qsort_compare_pair);
 			struct pair *ftable = creer_finger_table(
 				value,

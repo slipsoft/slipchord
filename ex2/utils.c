@@ -19,6 +19,9 @@ void print_table(int *table, int size)
 	}
 }
 
+/**
+ * Quickly display a finger table.
+ */
 void print_ftable(struct pair *table, int size)
 {
 	printf("Finger table:\n");

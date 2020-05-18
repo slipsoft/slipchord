@@ -14,6 +14,9 @@ int qsort_compare_pair(const void* a, const void* b)
 	return ((struct pair *) a)->valeur - ((struct pair *) b)->valeur;
 }
 
+/**
+ * Créée un tableu de struct pair à partir d'une liste de valeurs chord.
+ */
 struct pair *creer_tableau_pair(int *pairs_valeurs, int taille)
 {
 	struct pair *tableau = malloc(sizeof(struct pair) * taille);
@@ -126,7 +129,16 @@ void init_pairs_aleatoire_classe(int **p_pairs_valeurs,
 	qsort(*p_pairs_valeurs, *p_nombre_pairs, sizeof(int), qsort_compare_int);
 }
 
-
+/**
+ * Créée la finger table d'un pair à partir d'un tableau de pairs classé selon
+ * leur valeur chord. Cette Fingertable est en fait une liste de pairs afin de
+ * conserver une correspondance entre les id MPI et les valeurs chord des
+ * noeuds.
+ * @param ma_valeur valeur chord du noeud courant.
+ * @param nombre_clefs_exposant la puissance de 2 du nombre de clés.
+ * @param tableau_classe_pairs la table des pairs du noeud courrant. classé par valeur chord.
+ * @param nombre_pairs le nombre pairs dans la table des pairs.
+ */
 struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
                                           struct pair *tableau_classe_pairs,
 					  int nombre_pairs)
