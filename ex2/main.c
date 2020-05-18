@@ -41,10 +41,21 @@ void simulator()
 	int nb_peers = NB;
 	int nb_keys_exp = 6;
 	init_pairs_aleatoire_non_classe(&peertable, nb_peers, nb_keys_exp);
+	
+	
+	printf("\n------- Pairs (non classés) de la DHT -------\n");
+	
+	// Affichage des pairs
+	for (int i = 0; i < nb_peers; ++i) {
+		printf(" - %d", peertable[i]);
+	}
+	printf(" - \n\n");
+	
 	for (int i = 0; i < nb_peers; i++) {
 		send_message(i, VALUE, &peertable[i], 1);
 		send_message(i, KEYEXP, &nb_keys_exp, 1);
 	}
+	
 	free(peertable);
 }
 
@@ -86,7 +97,7 @@ void peer()
 	MPI_Recv(&nb_keys_exp, 1, MPI_INT, NB, KEYEXP, MPI_COMM_WORLD, &status);
 
 	
-	printf("P%2d> Démarré avec la valeur %d\n", rank, value);
+	//printf("P%2d> Démarré avec la valeur %d\n", rank, value);
 
 	// Si je suis initiateur, initialisation du jeton
 	if (initiator) {
@@ -122,6 +133,7 @@ void peer()
 				/* Mon jeton m'est retourné, j'envoie un message
 				   de type "tous les valeurs de pairs connues" */
 				send_message(right, DONE, payload, NB);
+				initiateur_gagnant = 1; // pour le détruire quand il me reviendra
 			} else {
 				/* Sinon, je mets ma valeur à la bonne position,
 				   et je laisse passer le message */
@@ -149,11 +161,18 @@ void peer()
 			free(peer_table);
 			
 			/* Affichage de ma finger table. */
-			printf("P%2d> value %d\n", rank, value);
-			print_ftable(ftable, nb_keys_exp);
+			afficher_finger_table(value, rank, nb_keys_exp, ftable);
+			printf("\n\n");
 			
-			// Je fais passer le message 
-			send_message(right, DONE, payload, NB);
+			/* Le temps de laisser à MPI d'afficher toutes les lignes,
+			   sans entrelacer les lignes des finger table de 
+			   plusieurs processus. */
+			usleep(50000);
+			
+			// Je fais passer le message, si je ne dois pas le détruire
+			if ( ! initiateur_gagnant) {
+				send_message(right, DONE, payload, NB);
+			}
 			free(payload);
 			running = 0;
 		}
