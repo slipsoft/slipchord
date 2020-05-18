@@ -38,27 +38,24 @@ void simulator()
 	free(peertable);
 }
 
+void newpeer()
+{
+
+}
+
 /**
  * Process of a classic chord peer.
  */
 void peer()
 {
-	NB--; // decrease to omit the simulator
-
 	MPI_Status status;
 	int winner = 0;
 	int payload_size = NB + 1;
 	int *payload = malloc(sizeof(int) * payload_size);
 	int token_index = NB;
 	struct pair *peer_table;
-	// finger table
-	struct pair *ftable;
-	// finger table size
-	int ftsize;
-	// reverse finger table
-	struct pair *rftable = malloc(sizeof(struct pair) * NB);
-	// reverse finger table size
-	int rftsize = 0;
+	struct peer_data *data = create_peer_data(NB);
+
 
 	srand(getpid());
 
@@ -67,7 +64,7 @@ void peer()
 	initiator = rand() % 2;
 	MPI_Recv(&value, 1, MPI_INT, NB, VALUE, MPI_COMM_WORLD, &status);
 	MPI_Recv(&nb_keys_exp, 1, MPI_INT, NB, KEYEXP, MPI_COMM_WORLD, &status);
-	ftsize = nb_keys_exp;
+	data->ftsize = nb_keys_exp;
 
 	printf("P%d> Started with value %d\n", rank, value);
 
@@ -99,27 +96,26 @@ void peer()
 			peer_table = creer_tableau_pair(payload, NB);
 			// sort the peer table by the chrod value
 			qsort(peer_table, NB, sizeof(struct pair), qsort_compare_pair);
-			ftable = creer_finger_table(
+			data->ftable = creer_finger_table(
 				value,
-				ftsize,
+				data->ftsize,
 				peer_table,
 				NB
 			);
 			free(peer_table);
-			send_reverse_messages(value, ftable, ftsize);
+			send_reverse_messages(value, data->ftable, data->ftsize);
 			if (!winner) {
 				send_message(right, DONE, payload, NB);
 			} else {
 				send_message(right, PRINT, payload, 1);
 			}
 		} else if (status.MPI_TAG == REVERSE) {
-			rftable[rftsize].rang = status.MPI_SOURCE;
-			rftable[rftsize].valeur = payload[0];
-			rftsize++;
+			data->rftable[data->rftsize].rang = status.MPI_SOURCE;
+			data->rftable[data->rftsize].valeur = payload[0];
+			data->rftsize++;
 		} else if (status.MPI_TAG == PRINT) {
 			printf("P%d> value %d\n", rank, value);
-			print_ftable(ftable, nb_keys_exp);
-			print_rftable(rftable, rftsize);
+			print_peer_data(data);
 			if (!winner) {
 				send_message(right, PRINT, payload, 1);
 			} else {
@@ -133,6 +129,7 @@ void peer()
 		}
 		
 	}
+	delete_peer_data(data);
 	free(payload);
 
 }
@@ -145,8 +142,10 @@ int main(int argc, char *argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &NB);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	if (rank == NB - 1) {
+	if (rank == --NB) {
 		simulator();
+	// } else if (rank == --NB) {
+	// 	newpeer();
 	} else {
 		peer();
 	}
