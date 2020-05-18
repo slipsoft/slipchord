@@ -2,7 +2,7 @@
 #include <mpi.h>
 #include <stdlib.h> // pour rand et srand
 #include <time.h>
-#include "init_valeurs_pairs.h"
+#include "utils.h"
 
 
 int qsort_compare_int(const void* a, const void* b)
@@ -209,5 +209,66 @@ void afficher_finger_table(int valeur_ce_pair, int rang_ce_pair,
 		int r_pair_responsable = f_table[i_clef].rang;
 		printf("   [%d]  clef(%3d)  pair(%3d)   rang_MPI(%2d)\n",
 		i_clef, v_clef, v_pair_responsable, r_pair_responsable);
+	}
+}
+
+// Trouver l'index (dans ma finger table) du pair à qui envoyer un message récursif 
+// -1 signifie que le pair en charge de la clef est mon successeur.
+int trouver_index_responsable(struct pair *finger_table, int len_ftable, int clef, int ma_valeur)
+{
+	// Je recherche le plus grand pair dont la clef est strictement plus petite que clef.
+	// Comme en TD, je prend le pair d'index le plus élevé dans ma finger table (donc le plus
+	// grand) vérifiant "clef appartient à l'intervalle ouvert
+	// entre (valeur du pair dans la finger_table) et (valeur du pair actuel)"
+	if (clef == ma_valeur) return -2;
+	int index_retenu = -1;
+	int nb_clefs = (1 << len_ftable);
+	
+	for (int i = 0; i < len_ftable; i++) {
+		int v_pair = finger_table[i].valeur;
+		//int clef_dans_intervalle = appartient_arc_oriente_strict(ma_valeur, v_pair, clef, nb_clefs);
+		int clef_dans_intervalle = appartient_arc_oriente_strict(v_pair, ma_valeur, clef, nb_clefs);
+		//clef_dans_intervalle = clef_dans_intervalle || (clef == ma_valeur);
+		
+		// Pour le débug, affiche si la clef est dans l'intervalle
+		// printf("p %d  [%d] -> %d  ds_int %d  [%d,%d] c %d\n",
+		// ma_valeur, i, v_pair, clef_dans_intervalle, ma_valeur, v_pair, clef);
+		
+		if (clef_dans_intervalle) {
+			index_retenu = i;
+		}
+	}
+	
+	// -1 signifie que le pair en charge de la clef est mon successeur. 
+	/*if (index_retenu != -1) {
+		if (finger_table[index_retenu].valeur == finger_table[0].valeur) {
+			index_retenu = -1;
+		}
+	}*/
+	
+	return index_retenu;
+}
+
+
+int appartient_arc_oriente_large(int a, int b, int k, int N)
+{
+	if (a == b) return 0;
+	if (k == a) return 1;
+	if (k == b) return 1;
+	return appartient_arc_oriente_strict(a, b, k, N);
+}
+
+int appartient_arc_oriente_strict(int a, int b, int k, int N)
+{
+	k = k % N;
+	// Cas simple, comme dans les entiers naturels
+	if (a <= b) {
+		if ( (a < k) && (k < b) ) return 1;
+		return 0;
+	} else {
+		int entre_a_et_zero = (k > a); // k <= N de base
+		int entre_b_et_zero = (k < b); // k >= 0 de base
+		if (entre_a_et_zero || entre_b_et_zero) return 1;
+		return 0;
 	}
 }

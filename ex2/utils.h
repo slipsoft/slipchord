@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mpi.h>
-#include "../ex1/init_valeurs_pairs.h"
+#include "../ex1/utils.h"
 
 #define EMPTY -1 // Symbolyses an empty value in the peer_table.
 
