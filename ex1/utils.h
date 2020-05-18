@@ -1,6 +1,6 @@
 
-#ifndef INIT_VALEURS_PAIRS
-#define INIT_VALEURS_PAIRS
+#ifndef utils
+#define utils
 
 
 struct pair {
@@ -35,6 +35,11 @@ int get_rand_time(void);
 // Pretty-print d'une finger table.
 void afficher_finger_table(int valeur_ce_pair, int rang_ce_pair,
                            int nombre_clefs_exposant, struct pair *f_table);
+int trouver_index_responsable(struct pair *finger_table,
+                              int len_ftable, int clef, int ma_valeur);
 
+int appartient_arc_oriente_large(int a, int b, int k, int N);
+
+int appartient_arc_oriente_strict(int a, int b, int k, int N);
 
 #endif

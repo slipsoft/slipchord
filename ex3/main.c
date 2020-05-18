@@ -3,7 +3,7 @@
 #include <mpi.h>
 #include <unistd.h>
 #include "tags.h"
-#include "../ex1/init_valeurs_pairs.h"
+#include "../ex1/utils.h"
 #include "../ex2/utils.h"
 #include "../ex3/utils.h"
 
