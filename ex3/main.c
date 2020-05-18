@@ -40,7 +40,23 @@ void simulator()
 
 void newpeer()
 {
+	MPI_Status status;
+	int payload_size = NB;
+	int *payload = malloc(sizeof(int) * payload_size);
+	struct peer_data *data = create_peer_data(NB);
 
+	MPI_Recv(&value, 1, MPI_INT, MPI_ANY_SOURCE, VALUE, MPI_COMM_WORLD, &status);
+	MPI_Recv(&nb_keys_exp, 1, MPI_INT, MPI_ANY_SOURCE, KEYEXP, MPI_COMM_WORLD, &status);
+	data->ftsize = nb_keys_exp;
+	running = 0;
+
+	while (running) {
+		receive_message(&status, payload, payload_size);
+		if (status.MPI_TAG == INIT) {
+		}
+	}
+
+	delete_peer_data(data);
 }
 
 /**
@@ -62,8 +78,8 @@ void peer()
 	left = (rank + NB - 1) % NB;
 	right = (rank + 1) % NB;
 	initiator = rand() % 2;
-	MPI_Recv(&value, 1, MPI_INT, NB, VALUE, MPI_COMM_WORLD, &status);
-	MPI_Recv(&nb_keys_exp, 1, MPI_INT, NB, KEYEXP, MPI_COMM_WORLD, &status);
+	MPI_Recv(&value, 1, MPI_INT, MPI_ANY_SOURCE, VALUE, MPI_COMM_WORLD, &status);
+	MPI_Recv(&nb_keys_exp, 1, MPI_INT, MPI_ANY_SOURCE, KEYEXP, MPI_COMM_WORLD, &status);
 	data->ftsize = nb_keys_exp;
 
 	printf("P%d> Started with value %d\n", rank, value);
@@ -144,8 +160,8 @@ int main(int argc, char *argv[])
 
 	if (rank == --NB) {
 		simulator();
-	// } else if (rank == --NB) {
-	// 	newpeer();
+	} else if (rank == --NB) {
+		newpeer();
 	} else {
 		peer();
 	}
