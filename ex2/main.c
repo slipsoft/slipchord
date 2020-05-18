@@ -31,9 +31,8 @@ int initiator;
 void simulator()
 {
 	int *peertable;
-	int nb_peers;
+	int nb_peers = NB;
 	int nb_keys_exp = 6;
-	MPI_Comm_size(MPI_COMM_WORLD, &nb_peers);
 	init_pairs_aleatoire_non_classe(&peertable, nb_peers, nb_keys_exp);
 	for (int i = 0; i < nb_peers; i++) {
 		send_message(i, VALUE, &peertable[i], 1);
@@ -47,8 +46,6 @@ void simulator()
  */
 void peer()
 {
-	NB--; // decrease to omit the simulator
-
 	MPI_Status status;
 	int payload_size = NB + 1;
 	int *payload = malloc(sizeof(int) * payload_size);
@@ -117,7 +114,7 @@ int main(int argc, char *argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &NB);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	if (rank == NB - 1) {
+	if (rank == --NB) {
 		simulator();
 	} else {
 		peer();

@@ -68,9 +68,6 @@ void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
 	// Un left shift élève à la bonne puissance de 2.
 	int nombre_clefs = 1 << nombre_clefs_exposant;
 	
-	MPI_Comm_size(MPI_COMM_WORLD, &nombre_pairs);
-	nombre_pairs--; // sans le processus simulateur
-	
 	
 	// Valeurs associées aux pairs
 	int *pairs_valeurs = malloc(sizeof(int) * nombre_pairs);
