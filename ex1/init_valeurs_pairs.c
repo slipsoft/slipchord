@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <stdlib.h> // pour rand et srand
+#include <time.h>
 #include "init_valeurs_pairs.h"
 
 
@@ -58,16 +59,11 @@ void init_pairs_TD(int **p_pairs_valeurs,
 
 // Initialisation des pairs d'une manière aléatoire.
 void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
-                                     int *p_nombre_pairs, int *p_nombre_clefs,
-                                     int *p_nombre_clefs_exposant)
+                                     int nombre_pairs, int nombre_clefs_exposant)
 {
-	int nombre_pairs;
-	int nombre_clefs;
-	int nombre_clefs_exposant = 6;
-	
 	// Initialisation du nombre de clefs
 	// Un left shift élève à la bonne puissance de 2.
-	nombre_clefs = 1 << nombre_clefs_exposant;
+	int nombre_clefs = 1 << nombre_clefs_exposant;
 	
 	MPI_Comm_size(MPI_COMM_WORLD, &nombre_pairs);
 	nombre_pairs--; // sans le processus simulateur
@@ -101,10 +97,7 @@ void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
 		//printf("pair %d  valeur %d \n", pair_index, valeur);
 	}
 	
-	// Il faut désormais classer les pairs par ordre croissant
-	// J'utilise un qsort (complexité n.log(n)) et non un algo "postal"
-	// même s'il y a un nombre fini de cases, car il y a beaucoup plus
-	// de cases possibles que de pairs.
+
 	
 	
 	/*for (int pair_index = 0; pair_index < nombre_pairs; ++pair_index) {
@@ -114,19 +107,19 @@ void init_pairs_aleatoire_non_classe(int **p_pairs_valeurs,
 	
 	// Retours
 	*p_pairs_valeurs = pairs_valeurs;
-	*p_nombre_pairs = nombre_pairs;
-	*p_nombre_clefs = nombre_clefs;
-	*p_nombre_clefs_exposant = nombre_clefs_exposant;
 }
 
 
 
 void init_pairs_aleatoire_classe(int **p_pairs_valeurs,
-                                 int *p_nombre_pairs, int *p_nombre_clefs,
-                                 int *p_nombre_clefs_exposant)
+                                 int nombre_pairs, int nombre_clefs_exposant)
 {
-	init_pairs_aleatoire_non_classe(p_pairs_valeurs, p_nombre_pairs, p_nombre_clefs, p_nombre_clefs_exposant);
-	qsort(*p_pairs_valeurs, *p_nombre_pairs, sizeof(int), qsort_compare_int);
+	init_pairs_aleatoire_non_classe(p_pairs_valeurs, nombre_pairs, nombre_clefs_exposant);
+	/* Il faut désormais classer les pairs par ordre croissant.
+	   J'utilise un qsort (complexité n.log(n)) et non un algo "postal"
+	   même s'il y a un nombre fini de cases, car il y a beaucoup plus
+	   de cases possibles que de pairs. */
+	qsort(*p_pairs_valeurs, nombre_pairs, sizeof(int), qsort_compare_int);
 }
 
 
@@ -139,9 +132,6 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 		struct pair pair = tableau_classe_pairs[i];
 		printf("pair[%d rg %d] val %d\n", i, pair.rang, pair.valeur);
 	}*/
-
-	// Valeur associée au pair d'index i_pair
-	//int ma_valeur = pairs_valeurs[i_pair];
 	
 	int nombre_clefs = 1 << nombre_clefs_exposant;
 	
@@ -159,7 +149,7 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 		// Je trouve le pair en charge de cette clef
 		int index_pair_associe;
 		int distance_min = -1;
-		//printf("----------------- (pair %2d) CLEF %d\n", ma_valeur, i_clef);
+		
 		/* Le pair associé est le plus petit pair plus grand ou égal à la clef.
 		   i.e. je prends la plus petite distance entre v_clef et un pair,
 		   dans le sens contraire au sens trigonométrique (distance donc
@@ -171,9 +161,6 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 			
 			// Si la valeur du pair est plus petite que la clef, je rajoute un tour.
 			
-			// énorme bug ici, incrément de la variable retournée.
-			//if (pair.valeur < v_clef) pair.valeur += nombre_clefs;
-			
 			if (p_val < v_clef) p_val += nombre_clefs;
 			
 			// La valeur du pair est donc supérieure ou égale à la valeur de la clef.
@@ -182,8 +169,6 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 			|| ((distance_min != -1) && (dist < distance_min))) {
 				distance_min = dist;
 				index_pair_associe = i;
-				//if (pair.valeur == 72) printf("(pair %2d) ??pair clef[%d] rg %d  val %d\n", ma_valeur, i_clef, pair.rang, pair.valeur);
-				
 			}
 		}
 		
@@ -191,4 +176,29 @@ struct pair *creer_finger_table(int ma_valeur, int nombre_clefs_exposant,
 	}
 	
 	return f_table;
+}
+
+// Obtenir un nombre basé sur le nombre de microsecondes dans la seconde actuelle
+// sert notamment si on appelle plusieurs fois srand() en une seconde.
+int get_rand_time(void)
+{
+	struct timespec tm;
+	clock_gettime(CLOCK_MONOTONIC, &tm);
+	return tm.tv_nsec;
+}
+
+// Pretty-print d'une finger table.
+void afficher_finger_table(int valeur_ce_pair, int rang_ce_pair,
+                           int nombre_clefs_exposant, struct pair *f_table)
+{
+	int nombre_clefs = 1 << nombre_clefs_exposant;
+	
+	printf("\n--- Finger table du pair %d (rang mpi %d) ---\n", valeur_ce_pair, rang_ce_pair);
+	for (int i_clef = 0; i_clef < nombre_clefs_exposant; ++i_clef) {
+		int v_clef = (valeur_ce_pair + (1 << i_clef)) % nombre_clefs;
+		int v_pair_responsable = f_table[i_clef].valeur;
+		int r_pair_responsable = f_table[i_clef].rang;
+		printf("   [%d]  clef(%3d)  pair(%3d)   rang_MPI(%2d)\n",
+		i_clef, v_clef, v_pair_responsable, r_pair_responsable);
+	}
 }
