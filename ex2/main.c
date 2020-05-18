@@ -47,9 +47,9 @@ void simulator()
 {
 	int *peertable;
 	int nb_peers;
-	int nb_keys;
-	int nb_keys_exp;
-	init_pairs_aleatoire_non_classe(&peertable, &nb_peers, &nb_keys, &nb_keys_exp);
+	int nb_keys_exp = 6;
+	MPI_Comm_size(MPI_COMM_WORLD, &nb_peers);
+	init_pairs_aleatoire_non_classe(&peertable, nb_peers, nb_keys_exp);
 	for (int i = 0; i < nb_peers; i++) {
 		send_message(i, VALUE, &peertable[i], 1);
 		send_message(i, KEYEXP, &nb_keys_exp, 1);
