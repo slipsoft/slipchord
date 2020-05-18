@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "../ex1/utils.h"
 
+#define NB_KEY_EXP 6 // nb power of 2 keys
+
 //************   TAGS
 #define INIT          0 // Message to init the peertable
 #define DONE          1 // Message to propagate the peertable
@@ -18,8 +20,6 @@ int NB;
 int rank;
 // Current Process chord value
 int value;
-// Nb key exposant
-int nb_keys_exp;
 // Left and right neighbours
 int left, right;
 int running = 1;
@@ -32,11 +32,9 @@ void simulator()
 {
 	int *peertable;
 	int nb_peers = NB;
-	int nb_keys_exp = 6;
-	init_pairs_aleatoire_non_classe(&peertable, nb_peers, nb_keys_exp);
+	init_pairs_aleatoire_non_classe(&peertable, nb_peers, NB_KEY_EXP);
 	for (int i = 0; i < nb_peers; i++) {
 		send_message(i, VALUE, &peertable[i], 1);
-		send_message(i, KEYEXP, &nb_keys_exp, 1);
 	}
 	free(peertable);
 }
@@ -58,7 +56,6 @@ void peer()
 	right = (rank + 1) % NB;
 	initiator = rand() % 2;
 	MPI_Recv(&value, 1, MPI_INT, NB, VALUE, MPI_COMM_WORLD, &status);
-	MPI_Recv(&nb_keys_exp, 1, MPI_INT, NB, KEYEXP, MPI_COMM_WORLD, &status);
 
 	printf("P%d> Started with value %d\n", rank, value);
 
@@ -91,13 +88,13 @@ void peer()
 			qsort(peer_table, NB, sizeof(struct pair), qsort_compare_pair);
 			struct pair *ftable = creer_finger_table(
 				value,
-				nb_keys_exp,
+				NB_KEY_EXP,
 				peer_table,
 				NB
 			);
 			free(peer_table);
 			printf("P%d> value %d\n", rank, value);
-			print_ftable(ftable, nb_keys_exp);
+			print_ftable(ftable, NB_KEY_EXP);
 			send_message(right, DONE, payload, NB);
 			free(payload);
 			running = 0;

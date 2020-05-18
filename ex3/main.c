@@ -7,6 +7,8 @@
 #include "../ex2/utils.h"
 #include "../ex3/utils.h"
 
+#define NB_KEY_EXP 6 // nb power of 2 keys
+
 //************   VARIABLES MPI
 // total process number
 int NB;
@@ -14,8 +16,6 @@ int NB;
 int rank;
 // Current Process chord value
 int value;
-// Nb key exposant
-int nb_keys_exp;
 // Left and right neighbours
 int left, right;
 int running = 1;
@@ -28,11 +28,9 @@ void simulator()
 {
 	int *peertable;
 	int nb_peers = NB;
-	int nb_keys_exp = 6;
-	init_pairs_aleatoire_non_classe(&peertable, nb_peers, nb_keys_exp);
+	init_pairs_aleatoire_non_classe(&peertable, nb_peers, NB_KEY_EXP);
 	for (int i = 0; i < nb_peers; i++) {
 		send_message(i, VALUE, &peertable[i], 1);
-		send_message(i, KEYEXP, &nb_keys_exp, 1);
 	}
 	free(peertable);
 }
@@ -45,8 +43,7 @@ void newpeer()
 	struct peer_data *data = create_peer_data(NB);
 
 	MPI_Recv(&value, 1, MPI_INT, MPI_ANY_SOURCE, VALUE, MPI_COMM_WORLD, &status);
-	MPI_Recv(&nb_keys_exp, 1, MPI_INT, MPI_ANY_SOURCE, KEYEXP, MPI_COMM_WORLD, &status);
-	data->ftsize = nb_keys_exp;
+	data->ftsize = NB_KEY_EXP;
 	running = 0;
 
 	while (running) {
@@ -78,8 +75,7 @@ void peer()
 	right = (rank + 1) % NB;
 	initiator = rand() % 2;
 	MPI_Recv(&value, 1, MPI_INT, MPI_ANY_SOURCE, VALUE, MPI_COMM_WORLD, &status);
-	MPI_Recv(&nb_keys_exp, 1, MPI_INT, MPI_ANY_SOURCE, KEYEXP, MPI_COMM_WORLD, &status);
-	data->ftsize = nb_keys_exp;
+	data->ftsize = NB_KEY_EXP;
 
 	printf("P%d> Started with value %d\n", rank, value);
 
