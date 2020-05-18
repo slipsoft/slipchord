@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ex1/init_valeurs_pairs.h"
+#include "../ex1/utils.h"
 
 struct peer_data {
 	// finger table
