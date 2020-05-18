@@ -20,6 +20,7 @@ void send_message(int dest, int tag, int *val, int size)
 
 /**
  * Init a table with EMPTY value.
+ * (initialisation d'un jeton vide)
  */
 void init_table(int *table, int size)
 {
