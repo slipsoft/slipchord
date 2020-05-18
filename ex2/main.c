@@ -25,19 +25,6 @@ int left, right;
 int running = 1;
 int initiator;
 
-//************   LES FONCTIONS   ***************************
-
-void receive_message(MPI_Status *status, int *value, int size)
-{
-	MPI_Recv(value, size, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
-}
-
-void send_message(int dest, int tag, int *val, int size)
-{
-	// printf("P%d> Send message %d to %d\n", rank, tag, dest);
-	MPI_Send(val, size, MPI_INT, dest, tag, MPI_COMM_WORLD);
-}
-
 /**
  * Process of the simulator.
  */
