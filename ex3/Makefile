@@ -14,7 +14,7 @@ endif
 .PHONY: all
 all: $(EXEC)
 
-$(EXEC): $(EXEC).o ../ex2/utils.o ../ex1/init_valeurs_pairs.o
+$(EXEC): $(EXEC).o utils.o ../ex2/utils.o ../ex1/init_valeurs_pairs.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c

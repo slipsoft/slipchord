@@ -2,14 +2,10 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <unistd.h>
-#include "../ex2/utils.h"
+#include "tags.h"
 #include "../ex1/init_valeurs_pairs.h"
-
-//************   TAGS
-#define INIT          0 // Message to init the peertable
-#define DONE          1 // Message to propagate the peertable
-#define VALUE         2 // Value sent by the simulator
-#define KEYEXP        3 // Key_exposant sent by the simulator
+#include "../ex2/utils.h"
+#include "../ex3/utils.h"
 
 //************   VARIABLES MPI
 // total process number
@@ -50,10 +46,19 @@ void peer()
 	NB--; // decrease to omit the simulator
 
 	MPI_Status status;
+	int winner = 0;
 	int payload_size = NB + 1;
 	int *payload = malloc(sizeof(int) * payload_size);
 	int token_index = NB;
 	struct pair *peer_table;
+	// finger table
+	struct pair *ftable;
+	// finger table size
+	int ftsize;
+	// reverse finger table
+	struct pair *rftable = malloc(sizeof(struct pair) * NB);
+	// reverse finger table size
+	int rftsize = 0;
 
 	srand(getpid());
 
@@ -62,6 +67,7 @@ void peer()
 	initiator = rand() % 2;
 	MPI_Recv(&value, 1, MPI_INT, NB, VALUE, MPI_COMM_WORLD, &status);
 	MPI_Recv(&nb_keys_exp, 1, MPI_INT, NB, KEYEXP, MPI_COMM_WORLD, &status);
+	ftsize = nb_keys_exp;
 
 	printf("P%d> Started with value %d\n", rank, value);
 
@@ -81,6 +87,7 @@ void peer()
 			if (initiator && payload[token_index] < rank) {
 				printf("P%d> Deleted message from %d\n", rank, payload[token_index]);
 			} else if (payload[rank] == value) {
+				winner = 1;
 				send_message(right, DONE, payload, NB);
 			} else {
 				payload[rank] = value;
@@ -92,20 +99,41 @@ void peer()
 			peer_table = creer_tableau_pair(payload, NB);
 			// sort the peer table by the chrod value
 			qsort(peer_table, NB, sizeof(struct pair), qsort_compare_pair);
-			struct pair *ftable = creer_finger_table(
+			ftable = creer_finger_table(
 				value,
-				nb_keys_exp,
+				ftsize,
 				peer_table,
 				NB
 			);
 			free(peer_table);
+			send_reverse_messages(value, ftable, ftsize);
+			if (!winner) {
+				send_message(right, DONE, payload, NB);
+			} else {
+				send_message(right, PRINT, payload, 1);
+			}
+		} else if (status.MPI_TAG == REVERSE) {
+			rftable[rftsize].rang = status.MPI_SOURCE;
+			rftable[rftsize].valeur = payload[0];
+			rftsize++;
+		} else if (status.MPI_TAG == PRINT) {
 			printf("P%d> value %d\n", rank, value);
 			print_ftable(ftable, nb_keys_exp);
-			send_message(right, DONE, payload, NB);
-			free(payload);
+			print_rftable(rftable, rftsize);
+			if (!winner) {
+				send_message(right, PRINT, payload, 1);
+			} else {
+				send_message(right, END, payload, 1);
+			}
+		} else if (status.MPI_TAG == END) {
 			running = 0;
+			if (!winner) {
+				send_message(right, END, payload, 1);
+			}
 		}
+		
 	}
+	free(payload);
 
 }
 
