@@ -4,7 +4,7 @@
 
 ### Question 2.1. Calcul des fingertables
 
-Afin de calculer sa fingertable, chaque noeud a besoin de connaître la valeur de l'ensemble des pairs qui constituent la DHT CHORD. Pour cela nous utiliserons l'algorithme de Chang-Roberts vu en cours (une reprise de l'exercice 1 du TME6). Ainsi, une fois qu'un pair a récupéré l'ensemble des valeurs (et rangs MPI) des pairs, il peut générer sa fingertable.  
+Afin de calculer sa finger-table, chaque noeud a besoin de connaître la valeur de l'ensemble des pairs qui constituent la DHT CHORD. Pour cela nous utiliserons l'algorithme de Chang-Roberts vu en cours (une reprise de l'exercice 1 du TME6). Ainsi, une fois qu'un pair a récupéré l'ensemble des valeurs (et rangs MPI) des pairs, il peut générer sa finger-table.  
 
 Cet algorithme demande l'envoi de messages de taille importante, et va un peu à l'encontre du principe de CHORD (ayant pour principe d'optimiser le ratio entre nombre de messages émis et taille de la table de routage), mais offre une complexité en messages très intéressante, en moyenne de (n * log(n)).  
 

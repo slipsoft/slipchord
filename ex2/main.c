@@ -82,9 +82,6 @@ void peer()
 	
 	// Aléatoire
 	srand(getpid());
-
-	// Pair de gauche
-	//left = (rank + NB - 1) % NB;
 	
 	// Pair de droite
 	right = (rank + 1) % NB;
