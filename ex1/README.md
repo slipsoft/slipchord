@@ -1,4 +1,4 @@
-# Projet CHORD
+# Projet CHORD - Nicolas Peugnet - Sylvain Joube
 
 Dans tout les exercices de notre projet, le simulateur a pour rang MPI N-1, c'est à dire que c'est le processus ayant l’identifiant MPI le plus élevé. Le processus de rang 0 est un pair comme un autre.  
 
@@ -8,7 +8,7 @@ Dans tout les exercices de notre projet, le simulateur a pour rang MPI N-1, c'es
 
 Le processus simulateur s'occupe de créer la DHT (distributed hash-table) et les finger tables des processus, puis envoie les infos utiles aux pairs (processus créés). Il choisit aussi le nombre de clefs du système. (c'est une puissance de deux)
 
-Le nombre de pairs est fonction du nombre de processus créés via MPI, pour changer leur nombre il suffit de changer la valeur de `NP` exemple `make run NP=42`.
+Le nombre de pairs est fonction du nombre de processus créés via MPI, pour changer leur nombre il suffit de changer la valeur de `NP` exemple `make run NP=11`.
 
 IL est possible d'initialiser la DHT aléatoirement (fonction `init_pairs_aleatoire_classe`) ou de l'initialiser selon ce que nous avons vu en TD (fonction `init_pairs_TD`).  
 
