@@ -4,11 +4,12 @@
 
 ### Question 3.1. Proposez un algorithme permettant une insertion
 
-Pour identifier de manière claire les processus dont nous allons parler, nous associons des lettres aux processus importants pour nous :
+Pour identifier de manière claire les processus et notions dont nous allons parler, nous associons des lettres aux notions et processus importants pour nous :
 - (I) le processus à insérer dans le système
 - (S) le processus successeur de ce processus (trouvé)
 - {R} l'ensemble des processus de la reverse-table du processus (S)
 - (P) le prédécesseur du processus (I) à insérer (trouvé)
+- n ou N le nombre de pairs du système, (I) compris.
 
 #### Prérequis
 
@@ -28,24 +29,15 @@ Du point du processus (I), son prédécesseur (P) est donc le pair de sa reverse
 
 #### Complexité en messages
 
+Complexité de chaque opération, approximative (à une constante près)
 
+- Demande initiale : log(N)
+- Envoi aux pairs de la reverse-finger-table (et, au passage, mise à jour des finger-table): en moyenne log(N), dans le pire cas N
+- Réponse de ces pairs : en moyenne log(N), dans le pire cas N
+- Envoi de messages aux pairs de la finger-table approximative du processus (I) à ajouter : (log(N))^2   (si l'écriture passe chez vous : log²(N))
 
+La complexité en message est donc en O((log(N)^2) (log carré de N) en moyenne, O(N) dans le pire cas.
 
-**Trucs pas mis :**
-Le prédécesseur du processus est le plus grand (cycliquement) pair de ma reverse finger table. On lui demande sa finger table. Ensuite, on constitue notre finger table avec l'ensemble des valeurs constituées par le prédécesseur et le successeur. On vérifie alors auprès de tous ces processus que ce sont bien eux les responsables des clefs de notre finger table, et si ce n'est pas eux, ils nous renvoient le réel responsable de chaque clef, tout en mettant à jour leur reverse finger-table.
+### Question 3.2. Un début d'implémentation
 
-Lorsqu'on informe un pair de notre reverse finger table qu'il faut qu'il mette à jour sa finger table :
-
-- Les pairs contactés (B) n'ont que besoin de la valeur du nouveau pair inséré pour mettre à jour leurs tables
-- Le pair qui les a contactés (A) supprime toutes ses entrées de la reverse finger table
-- Les pairs contactés (B) envoient soit un message au pair
-
-
-
-
- de contacter l'ensemble des noeuds qu'elle contient pour les informer de son entrée dans la DHT.
-
-A l'aide de cette table il peut également contacter son plus proche prédécesseur pour récupérer sa finger-table.
-
-
-
+Nous n'avons que eu le temps d'implémenter les reverse-finger-table d'une manière distribuée, et n'avons pas eu le temps de plus en faire, comme nous avons une importante charge de travail dans toutes les UE, compte tenu de la situation actuelle et de l'orientation générale prise par les responsables d'UE en master SAR qui nous demandent de rendre tous les TME dans toutes les matières.

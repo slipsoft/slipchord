@@ -76,7 +76,6 @@ void simulateur(long cseed)
 		
 		// Affichage des pairs
 		for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
-			//printf(" - %d", pairs_valeurs[i_pair]);
 			printf(" - %d", tableau_pairs[i_pair].valeur);
 		}
 		printf(" - \n\n");
@@ -100,7 +99,6 @@ void simulateur(long cseed)
 	}
 	
 	// Affichage des finger table :
-	//int vtest = 7;
 	
 	if (show_full_debug_info) {
 		printf("------- Finger tables des pairs -------\n");
@@ -114,7 +112,6 @@ void simulateur(long cseed)
 	}
 	
 	// Envoi des valeurs aux autres processus
-	
 	for (int i_pair = 0; i_pair < nombre_pairs; ++i_pair) {
 		struct pair *f_table = f_tables_pairs[i_pair];
 		int v_pair = pairs_valeurs[i_pair];
@@ -165,7 +162,7 @@ void simulateur(long cseed)
 	}
 	
 	if (show_full_debug_info) printf("\n");
-	//printf("\n-----> Simulateur : le pair en charge de la clef %d est le pair %d.\n\n\n",
+	
 	printf("-----> Simulateur : le pair en charge de la clef %d est le pair %d.\n",
 	valeur_recherchee, valeur_pair_responsable);
 	if (show_full_debug_info) printf("\n\n");
@@ -187,8 +184,6 @@ void pair_classique(void)
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_rank(MPI_COMM_WORLD, &mon_rang);
 	
-	// TODO : 
-	
 	// Réception de ses informations
 	int valeur_pair;
 	int nombre_clefs_exposant;
@@ -196,7 +191,6 @@ void pair_classique(void)
 	
 	MPI_Recv(&nombre_clefs_exposant, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
 	MPI_Recv(&valeur_pair, 1, MPI_INT, RANG_SIMULATEUR, TAG_INIT, MPI_COMM_WORLD, &status);
-	
 	
 	struct pair *finger_table = malloc(sizeof(struct pair) * nombre_clefs_exposant);
 	
@@ -217,8 +211,6 @@ void pair_classique(void)
 		// Attente de la réception d'un message
 		MPI_Recv(&valeur_clef, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 		
-		//printf("(pair %d rg %d) : réception...  (tag %d)\n", valeur_pair, mon_rang, status.MPI_TAG);
-		
 		// Le système se termine
 		if (status.MPI_TAG == TAG_TERM) {
 			continuer = 0;
@@ -229,6 +221,7 @@ void pair_classique(void)
 		// à qui renvoyer le message lorsque le pair responsable est trouvé
 		int rang_retour_message;
 		
+		// s'il faut renvoyer le message au pair dont le rang m'a été passé
 		int doit_renvoyer_message;
 		
 		// Pour factoriser les fonctions, vrai si je dois rechercher un pair
@@ -241,7 +234,8 @@ void pair_classique(void)
 			rang_retour_message = mon_rang; // le message devra m'être retourné
 			// Je recherche le processus à qui envoyer ma demande
 			if (show_peers_messages) {
-				printf("(pair %d rg %d) : Simulateur me demande de rechercher la clef %d\n\n", valeur_pair, mon_rang, valeur_clef);
+				printf("(pair %d rg %d) : Simulateur me demande de rechercher la clef %d\n\n",
+				 valeur_pair, mon_rang, valeur_clef);
 			}
 		}
 		
@@ -267,7 +261,8 @@ void pair_classique(void)
 				resp_valeur = valeur_pair;
 				resp_rang = mon_rang;
 				if (show_peers_messages) {
-					printf("(pair %d rg %d) : je suis responsable de la clef(%d).\n\n", valeur_pair, mon_rang, valeur_clef);
+					printf("(pair %d rg %d) : je suis responsable de la clef(%d).\n\n",
+					valeur_pair, mon_rang, valeur_clef);
 				}
 				
 			} else if (resp_index == -1) {
@@ -309,12 +304,9 @@ void pair_classique(void)
 				}
 			}
 			
-			
-			
-			// Si je suis le processus qui a fait la demande initiale,
-			// ma demande a été bloquante, du coup là j'envoie un message au processus
-			// init.
-			//if (status.MPI_TAG == TAG_RECHERCHE_INIT) {
+			/* Si je suis le processus qui a fait la demande initiale,
+			   ma demande a été bloquante, du coup là j'envoie un message
+			   au processus init.*/
 			if (doit_renvoyer_message) {
 				if (show_peers_messages) {
 					printf("(pair %d rg %d) : je renvoie le message au demandeur : rang_MPI(%d)  responsable : val(%d) rg(%d).\n\n",
@@ -323,14 +315,9 @@ void pair_classique(void)
 				MPI_Send(&resp_valeur, 1, MPI_INT, rang_retour_message, TAG_RECHERCHE_TROUVE, MPI_COMM_WORLD);
 				MPI_Send(&resp_rang, 1, MPI_INT, rang_retour_message, TAG_RECHERCHE_TROUVE, MPI_COMM_WORLD);
 			} else {
-				// i.e. (status.MPI_TAG == TAG_RECHERCHE_INIT)
 				// Envoi au simulateur (le simulateur va broadcast un message de terminaison)
 				MPI_Send(&resp_valeur, 1, MPI_INT, RANG_SIMULATEUR, TAG_RECHERCHE_TROUVE, MPI_COMM_WORLD);
 			}
-			/*if (rang_retour_message != -1) {
-				// Envoi du message au pair qui a initialement fait la recherche
-				MPI_Send(&resp_valeur, 1, MPI_INT, rang_retour_message, TAG_RECHERCHE_TROUVE, MPI_COMM_WORLD);
-			}*/
 			
 		}
 	}
@@ -338,12 +325,7 @@ void pair_classique(void)
 	free(finger_table);
 }
 
-/*
-#define TAG_INIT 1
-#define TAG_INITACK 2
-#define TAG_RECHERCHE 3
-#define TAG_TERM 4
-*/
+
 
 int main(int argc, char *argv[])
 {
